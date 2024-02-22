@@ -1,0 +1,13 @@
+node_modules
+dist
+.env
+coverage
+coverage.json
+typechain
+typechain-types
+/.openzeppelin
+# Hardhat files
+cache
+artifacts
+
+/deploy-result
