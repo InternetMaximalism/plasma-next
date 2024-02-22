@@ -1,0 +1,45 @@
+[package]
+name = "zkp"
+authors=["kbizikav"]
+license = "MIT OR Apache-2.0"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+stark-verifier={git="https://github.com/kbizikav/stark-verifier", rev="0fabe8b"}
+plonky2={git="https://github.com/kbizikav/plonky2", default-features = false }
+plonky2_u32={git="https://github.com/kbizikav/plonky2", default-features = false }
+starky-keccak = { git = "https://github.com/kbizikav/starky-keccak", default-features = false}
+anyhow = "1.0.56"   
+lazy_static = "1.4.0"
+itertools = "0.11"
+rand = "0.8"
+subtle = "2.4"
+num-integer = "0.1"
+num-traits = "0.2"
+num-bigint = { version = "0.4", features = ["rand"] }
+colored = "2.0.0"
+rayon = "1.5.3"
+hex = "0.4.3"
+derive_more = "0.99.17"
+num = { version = "0.4", default-features = false, features = ["rand"] }
+serde = { version = "1.0.192", features = ["derive"] }
+serde_json = "1.0.108"
+parking_lot = "0.12.1"
+env_logger = "0.10.1"
+actix-web = { version = "4.4", optional = true }
+actix-http = { version = "3.4.0", optional = true }
+log = { version = "0.4.20", optional = true }
+
+[features]
+default = ["plonky2/default", "starky-keccak/default", "api"]
+api = ["actix-web", "actix-http", "log"]
+
+[lib]
+
+[[bin]]
+name = "main"
+path = "src/main.rs"
+required-features = ["api"]

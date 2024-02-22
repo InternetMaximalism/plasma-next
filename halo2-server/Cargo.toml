@@ -1,0 +1,40 @@
+[package]
+name = "halo2-server"
+authors=["kbizikav"]
+license = "MIT OR Apache-2.0"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+stark-verifier={git="https://github.com/kbizikav/stark-verifier", rev="0fabe8b"}
+zkp = { path="../zkp" }
+plonky2={git="https://github.com/kbizikav/plonky2"}
+anyhow = "1.0.56"   
+lazy_static = "1.4.0"
+halo2_proofs = { git = "https://github.com/privacy-scaling-explorations/halo2.git", features = ["dev-graph"], tag = "v2023_04_20" }
+halo2_solidity_verifier = {git="https://github.com/privacy-scaling-explorations/halo2-solidity-verifier.git", rev="85cb77b171", features=["evm"]}
+itertools = "0.11"
+rand = "0.8"
+subtle = "2.4"
+num-integer = "0.1"
+num-traits = "0.2"
+num-bigint = { version = "0.4", features = ["rand"] }
+colored = "2.0.0"
+rayon = "1.5.3"
+hex = "0.4.3"
+derive_more = "0.99.17"
+num = { version = "0.4", default-features = false, features = ["rand"] }
+serde = { version = "1.0.192", features = ["derive"] }
+serde_json = "1.0.108"
+actix-web = "4"
+env_logger = "0.10.1"
+actix-http = "3.4.0"
+actix = "0.13.2"
+log = "0.4.20"
+dotenv = "0.15.0"
+sha2 = { version = "0.10.8", optional = true }
+
+[features]
+debug = ["sha2"]

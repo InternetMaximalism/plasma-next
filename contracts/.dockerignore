@@ -1,0 +1,15 @@
+node_modules
+dist
+.env
+coverage
+coverage.json
+typechain
+typechain-types
+
+# Hardhat files
+cache
+artifacts
+
+/deploy-result
+
+package-lock.json
