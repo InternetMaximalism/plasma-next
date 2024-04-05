@@ -8,7 +8,6 @@ import {
   getUupsContract,
   testHash1,
   testHash2,
-  testHash3,
 } from "../../test-utils"
 import { Config, Main, TestLiquidityManager4 } from "../../../typechain-types"
 import {
@@ -41,21 +40,15 @@ describe("main", () => {
     }
   }
   const generateSettlementMerkleProofTemplate =
-    (): IMerkleProof.SettlementMerkleProofStruct => {
+    (): IMerkleProof.WithdrawWithMerkleProofStruct => {
       return {
         leaf: {
-          withdrawLeaf: {
-            recipient: ethers.ZeroAddress,
-            amount: {
-              amounts: [0n, 0n, 0n, 0n],
-            },
-            startEbn: 0n,
-            endEbn: 0n,
+          recipient: ethers.ZeroAddress,
+          amount: {
+            amounts: [0n, 0n, 0n, 0n],
           },
-          evidenceLeaf: {
-            transferCommitment: ethers.ZeroHash,
-            ebn: 7n,
-          },
+          startEbn: 0n,
+          endEbn: 0n,
         },
         index: 1n,
         siblings: [ethers.ZeroHash, ethers.ZeroHash],
@@ -93,8 +86,7 @@ describe("main", () => {
         ebn: 1n,
         round: 2n,
       })
-    const identifier = await getUniqueIdentifier(await main.getAddress())
-    const payment = initialPayment(identifier, signers.user.address, 10n, 0)
+    const payment = initialPayment(signers.user.address, 10n, 0)
     return [main, testLiquidityManager4, payment]
   }
   describe("initialize", () => {
@@ -311,12 +303,13 @@ describe("main", () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const state = await main.getChannelState(signers.user.address)
@@ -324,20 +317,23 @@ describe("main", () => {
         expect(state.ebn).to.equal(1n)
         expect(state.round).to.equal(2n)
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 10n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
 
         await main
           .connect(signers.operator)
-          .closeChannel(createPaymentWithSignature(payment, signed), proof, {
-            amounts: [1n, 2n, 3n, 4n],
-          })
+          .closeChannel(
+            createPaymentWithSignature(payment, signed),
+            proof,
+            "0x",
+            {
+              amounts: [1n, 2n, 3n, 4n],
+            }
+          )
         const newState = await main.getChannelState(signers.user.address)
         expect(newState.userDeposit.amounts).to.eql([1n, 2n, 3n, 4n])
         expect(newState.ebn).to.equal(10n)
@@ -347,28 +343,32 @@ describe("main", () => {
         const [main, liquidityManager, payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 10n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
         await main
           .connect(signers.operator)
-          .closeChannel(createPaymentWithSignature(payment, signed), proof, {
-            amounts: [1n, 2n, 3n, 4n],
-          })
+          .closeChannel(
+            createPaymentWithSignature(payment, signed),
+            proof,
+            "0x",
+            {
+              amounts: [1n, 2n, 3n, 4n],
+            }
+          )
         const latestRecipient0 = await liquidityManager.latestRecipient(0)
         const latestAssets0_0 = await liquidityManager.latestAssets0(0)
         const latestAssets1_0 = await liquidityManager.latestAssets1(0)
@@ -397,77 +397,48 @@ describe("main", () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 10n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
         await main
           .connect(signers.operator)
-          .closeChannel(createPaymentWithSignature(payment, signed), proof, {
-            amounts: [1n, 2n, 3n, 4n],
-          })
+          .closeChannel(
+            createPaymentWithSignature(payment, signed),
+            proof,
+            "0x",
+            {
+              amounts: [1n, 2n, 3n, 4n],
+            }
+          )
         const events = await main.queryFilter(main.filters.ChannelClosed())
         expect(events.length).to.equal(1)
         const event = events[0]
         expect(event.args.user).to.equal(signers.user.address)
         expect(event.args.round).to.equal(payment.round)
       })
-      it("verify additional ZKPTLC", async () => {
-        const [main, , payment] = await setupCloseChannel()
-        const testAdditionalZKPTLCFactory = await ethers.getContractFactory(
-          "TestAdditionalZKPTLC"
-        )
-        const testAdditionalZKPTLC = await testAdditionalZKPTLCFactory.deploy()
-
-        const signers = await getSigners()
-        payment.round = 2
-        payment.latestTransferCommitment = testHash3
-        payment.airdropped.amounts = [1n, 2n, 3n, 4n]
-        payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
-        payment.customData = (await testAdditionalZKPTLC.getAddress()) + "93"
-        await testAdditionalZKPTLC.setVerifyAdditionalZKPTLCResult(true)
-        const signed = await signPayment(
-          signers.user,
-          signers.operator,
-          payment
-        )
-        const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
-        proof.index = 1n
-        proof.siblings = [testHash1, testHash2]
-        await main
-          .connect(signers.operator)
-          .closeChannel(createPaymentWithSignature(payment, signed), proof, {
-            amounts: [1n, 2n, 3n, 4n],
-          })
-        expect(true).to.equal(true)
-      })
     })
     describe("fail", async () => {
       it("only operator", async () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
@@ -475,9 +446,14 @@ describe("main", () => {
         await expect(
           main
             .connect(signers.illegalUser)
-            .closeChannel(createPaymentWithSignature(payment, signed), proof, {
-              amounts: [1n, 2n, 3n, 4n],
-            })
+            .closeChannel(
+              createPaymentWithSignature(payment, signed),
+              proof,
+              "0x",
+              {
+                amounts: [1n, 2n, 3n, 4n],
+              }
+            )
         )
           .to.be.revertedWithCustomError(
             main,
@@ -489,30 +465,34 @@ describe("main", () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.illegalUser.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.illegalUser.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 10n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
 
         await expect(
           main
             .connect(signers.operator)
-            .closeChannel(createPaymentWithSignature(payment, signed), proof, {
-              amounts: [1n, 2n, 3n, 4n],
-            })
+            .closeChannel(
+              createPaymentWithSignature(payment, signed),
+              proof,
+              "0x",
+              {
+                amounts: [1n, 2n, 3n, 4n],
+              }
+            )
         )
           .to.be.revertedWithCustomError(main, "RecipientMismatch")
           .withArgs(signers.illegalUser.address, signers.user.address)
@@ -521,30 +501,34 @@ describe("main", () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 3
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 10n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
 
         await expect(
           main
             .connect(signers.operator)
-            .closeChannel(createPaymentWithSignature(payment, signed), proof, {
-              amounts: [1n, 2n, 3n, 4n],
-            })
+            .closeChannel(
+              createPaymentWithSignature(payment, signed),
+              proof,
+              "0x",
+              {
+                amounts: [1n, 2n, 3n, 4n],
+              }
+            )
         )
           .to.be.revertedWithCustomError(main, "RoundMismatch")
           .withArgs(2, payment.round)
@@ -553,197 +537,221 @@ describe("main", () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 4n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 4n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
 
         await expect(
           main
             .connect(signers.operator)
-            .closeChannel(createPaymentWithSignature(payment, signed), proof, {
-              amounts: [1n, 2n, 3n, 4n],
-            })
+            .closeChannel(
+              createPaymentWithSignature(payment, signed),
+              proof,
+              "0x",
+              {
+                amounts: [1n, 2n, 3n, 4n],
+              }
+            )
         )
           .to.be.revertedWithCustomError(main, "EbnSanityCheckFailed")
-          .withArgs(
-            proof.leaf.withdrawLeaf.startEbn,
-            proof.leaf.withdrawLeaf.endEbn
-          )
+          .withArgs(proof.leaf.startEbn, proof.leaf.endEbn)
       })
       it("latest ebn mismatch", async () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 9n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 9n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
 
         await expect(
           main
             .connect(signers.operator)
-            .closeChannel(createPaymentWithSignature(payment, signed), proof, {
-              amounts: [1n, 2n, 3n, 4n],
-            })
+            .closeChannel(
+              createPaymentWithSignature(payment, signed),
+              proof,
+              "0x",
+              {
+                amounts: [1n, 2n, 3n, 4n],
+              }
+            )
         )
           .to.be.revertedWithCustomError(main, "LatestEbnMismatch")
-          .withArgs(proof.leaf.withdrawLeaf.endEbn, payment.latestEbn)
+          .withArgs(proof.leaf.endEbn, payment.latestEbn)
       })
       it("leaf start ebn is too old", async () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 0n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 0n
+        proof.leaf.endEbn = 10n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
 
         await expect(
           main
             .connect(signers.operator)
-            .closeChannel(createPaymentWithSignature(payment, signed), proof, {
-              amounts: [1n, 2n, 3n, 4n],
-            })
+            .closeChannel(
+              createPaymentWithSignature(payment, signed),
+              proof,
+              "0x",
+              {
+                amounts: [1n, 2n, 3n, 4n],
+              }
+            )
         )
           .to.be.revertedWithCustomError(main, "LeafStartEbnIsTooOld")
-          .withArgs(proof.leaf.withdrawLeaf.startEbn, 1)
+          .withArgs(proof.leaf.startEbn, 1)
       })
       it("airdropped amount mismatch", async () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = [1n, 2n, 3n, 5n]
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = [1n, 2n, 3n, 5n]
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 10n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
 
         await expect(
           main
             .connect(signers.operator)
-            .closeChannel(createPaymentWithSignature(payment, signed), proof, {
-              amounts: [1n, 2n, 3n, 4n],
-            })
+            .closeChannel(
+              createPaymentWithSignature(payment, signed),
+              proof,
+              "0x",
+              {
+                amounts: [1n, 2n, 3n, 4n],
+              }
+            )
         )
           .to.be.revertedWithCustomError(main, "AirdroppedAmountMismatch")
           .withArgs([[1n, 2n, 3n, 5n]], [payment.airdropped.amounts])
       })
-      it("transfer commitment mismatch", async () => {
+      it("ZKPTLC verification failed", async () => {
         const [main, , payment] = await setupCloseChannel()
+        const testAdditionalZKPTLCFactory = await ethers.getContractFactory(
+          "TestAdditionalZKPTLC"
+        )
+        const testAdditionalZKPTLC = await testAdditionalZKPTLCFactory.deploy()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
+        payment.zkptlcAddress = await testAdditionalZKPTLC.getAddress()
+        await testAdditionalZKPTLC.setErrorFlg(true)
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash2
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 10n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
 
         await expect(
           main
             .connect(signers.operator)
-            .closeChannel(createPaymentWithSignature(payment, signed), proof, {
-              amounts: [1n, 2n, 3n, 4n],
-            })
+            .closeChannel(
+              createPaymentWithSignature(payment, signed),
+              proof,
+              "0x",
+              {
+                amounts: [1n, 2n, 3n, 4n],
+              }
+            )
         )
-          .to.be.revertedWithCustomError(main, "TransferCommitmentMismatch")
-          .withArgs(
-            proof.leaf.evidenceLeaf.transferCommitment,
-            payment.latestTransferCommitment
-          )
+          .to.be.revertedWithCustomError(main, "ZKPTLCVerificationFailed")
+          .withArgs(payment.zkptlcAddress)
       })
       it("spent more than deposit", async () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
         payment.spentDeposit.amounts = [11n, 11n, 12n, 13n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 10n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
 
         await expect(
           main
             .connect(signers.operator)
-            .closeChannel(createPaymentWithSignature(payment, signed), proof, {
-              amounts: [1n, 2n, 3n, 4n],
-            })
+            .closeChannel(
+              createPaymentWithSignature(payment, signed),
+              proof,
+              "0x",
+              {
+                amounts: [1n, 2n, 3n, 4n],
+              }
+            )
         )
           .to.be.revertedWithCustomError(main, "SpentMoreThanDeposit")
           .withArgs([payment.spentDeposit.amounts], [[10n, 11n, 12n, 13n]])
@@ -752,112 +760,40 @@ describe("main", () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 5n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 10n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
 
         await expect(
           main
             .connect(signers.operator)
-            .closeChannel(createPaymentWithSignature(payment, signed), proof, {
-              amounts: [1n, 2n, 3n, 4n],
-            })
+            .closeChannel(
+              createPaymentWithSignature(payment, signed),
+              proof,
+              "0x",
+              {
+                amounts: [1n, 2n, 3n, 4n],
+              }
+            )
         )
           .to.be.revertedWithCustomError(main, "InvariantViolation")
           .withArgs(
             [payment.airdropped.amounts],
             [payment.operatorBalance.amounts]
           )
-      })
-      it("invalid custom data length", async () => {
-        const [main, , payment] = await setupCloseChannel()
-        const signers = await getSigners()
-        payment.round = 2
-        payment.latestTransferCommitment = testHash3
-        payment.airdropped.amounts = [1n, 2n, 3n, 4n]
-        payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
-        payment.customData = ethers.hexlify(ethers.randomBytes(19))
-
-        const signed = await signPayment(
-          signers.user,
-          signers.operator,
-          payment
-        )
-        const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
-        proof.index = 1n
-        proof.siblings = [testHash1, testHash2]
-        await expect(
-          main
-            .connect(signers.operator)
-            .closeChannel(createPaymentWithSignature(payment, signed), proof, {
-              amounts: [1n, 2n, 3n, 4n],
-            })
-        )
-          .to.be.revertedWithCustomError(main, "InvalidCustomDataLength")
-          .withArgs(payment.customData)
-      })
-      it("additional ZKPTLC verification failed", async () => {
-        const [main, , payment] = await setupCloseChannel()
-        const testAdditionalZKPTLCFactory = await ethers.getContractFactory(
-          "TestAdditionalZKPTLC"
-        )
-        const testAdditionalZKPTLC = await testAdditionalZKPTLCFactory.deploy()
-
-        const signers = await getSigners()
-        payment.round = 2
-        payment.latestTransferCommitment = testHash3
-        payment.airdropped.amounts = [1n, 2n, 3n, 4n]
-        payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
-        const testAdditionalZKPTLCAddress =
-          await testAdditionalZKPTLC.getAddress()
-        payment.customData = testAdditionalZKPTLCAddress + "93"
-        await testAdditionalZKPTLC.setVerifyAdditionalZKPTLCResult(false)
-        const signed = await signPayment(
-          signers.user,
-          signers.operator,
-          payment
-        )
-        const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
-        proof.index = 1n
-        proof.siblings = [testHash1, testHash2]
-        await expect(
-          main
-            .connect(signers.operator)
-            .closeChannel(createPaymentWithSignature(payment, signed), proof, {
-              amounts: [1n, 2n, 3n, 4n],
-            })
-        )
-          .to.be.revertedWithCustomError(
-            main,
-            "AdditionalZKPTLCVerificationFailed"
-          )
-          .withArgs(testAdditionalZKPTLCAddress)
       })
     })
   })
@@ -868,12 +804,13 @@ describe("main", () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const state = await main.getChannelState(signers.user.address)
@@ -881,12 +818,10 @@ describe("main", () => {
         expect(state.ebn).to.equal(1n)
         expect(state.round).to.equal(2n)
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 10n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
 
@@ -894,7 +829,8 @@ describe("main", () => {
           .connect(signers.dummyWithdraw)
           .closeChannelAsChallenge(
             createPaymentWithSignature(payment, signed),
-            proof
+            proof,
+            "0x"
           )
         const newState = await main.getChannelState(signers.user.address)
         expect(newState.userDeposit.amounts).to.eql([0n, 0n, 0n, 0n])
@@ -905,28 +841,28 @@ describe("main", () => {
         const [main, liquidityManager, payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 10n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
         await main
           .connect(signers.dummyWithdraw)
           .closeChannelAsChallenge(
             createPaymentWithSignature(payment, signed),
-            proof
+            proof,
+            "0x"
           )
         const latestRecipient0 = await liquidityManager.latestRecipient(0)
         const latestAssets0_0 = await liquidityManager.latestAssets0(0)
@@ -955,28 +891,28 @@ describe("main", () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 10n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
         await main
           .connect(signers.dummyWithdraw)
           .closeChannelAsChallenge(
             createPaymentWithSignature(payment, signed),
-            proof
+            proof,
+            "0x"
           )
         const events = await main.queryFilter(main.filters.ChannelClosed())
         expect(events.length).to.equal(1)
@@ -984,50 +920,16 @@ describe("main", () => {
         expect(event.args.user).to.equal(signers.user.address)
         expect(event.args.round).to.equal(payment.round)
       })
-      it("verify additional ZKPTLC", async () => {
-        const [main, , payment] = await setupCloseChannel()
-        const testAdditionalZKPTLCFactory = await ethers.getContractFactory(
-          "TestAdditionalZKPTLC"
-        )
-        const testAdditionalZKPTLC = await testAdditionalZKPTLCFactory.deploy()
-
-        const signers = await getSigners()
-        payment.round = 2
-        payment.latestTransferCommitment = testHash3
-        payment.airdropped.amounts = [1n, 2n, 3n, 4n]
-        payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
-        payment.customData = (await testAdditionalZKPTLC.getAddress()) + "93"
-        await testAdditionalZKPTLC.setVerifyAdditionalZKPTLCResult(true)
-        const signed = await signPayment(
-          signers.user,
-          signers.operator,
-          payment
-        )
-        const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
-        proof.index = 1n
-        proof.siblings = [testHash1, testHash2]
-        await main
-          .connect(signers.dummyWithdraw)
-          .closeChannelAsChallenge(
-            createPaymentWithSignature(payment, signed),
-            proof
-          )
-        expect(true).to.equal(true)
-      })
     })
     describe("fail", async () => {
       it("only operator", async () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
@@ -1037,7 +939,8 @@ describe("main", () => {
             .connect(signers.illegalUser)
             .closeChannelAsChallenge(
               createPaymentWithSignature(payment, signed),
-              proof
+              proof,
+              "0x"
             )
         )
           .to.be.revertedWithCustomError(
@@ -1050,21 +953,20 @@ describe("main", () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.illegalUser.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.illegalUser.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 10n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
 
@@ -1073,7 +975,8 @@ describe("main", () => {
             .connect(signers.dummyWithdraw)
             .closeChannelAsChallenge(
               createPaymentWithSignature(payment, signed),
-              proof
+              proof,
+              "0x"
             )
         )
           .to.be.revertedWithCustomError(main, "RecipientMismatch")
@@ -1083,21 +986,20 @@ describe("main", () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 3
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 10n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
 
@@ -1106,7 +1008,8 @@ describe("main", () => {
             .connect(signers.dummyWithdraw)
             .closeChannelAsChallenge(
               createPaymentWithSignature(payment, signed),
-              proof
+              proof,
+              "0x"
             )
         )
           .to.be.revertedWithCustomError(main, "RoundMismatch")
@@ -1116,21 +1019,20 @@ describe("main", () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 4n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 4n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
 
@@ -1139,34 +1041,31 @@ describe("main", () => {
             .connect(signers.dummyWithdraw)
             .closeChannelAsChallenge(
               createPaymentWithSignature(payment, signed),
-              proof
+              proof,
+              "0x"
             )
         )
           .to.be.revertedWithCustomError(main, "EbnSanityCheckFailed")
-          .withArgs(
-            proof.leaf.withdrawLeaf.startEbn,
-            proof.leaf.withdrawLeaf.endEbn
-          )
+          .withArgs(proof.leaf.startEbn, proof.leaf.endEbn)
       })
       it("latest ebn mismatch", async () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 9n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 9n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
 
@@ -1175,31 +1074,31 @@ describe("main", () => {
             .connect(signers.dummyWithdraw)
             .closeChannelAsChallenge(
               createPaymentWithSignature(payment, signed),
-              proof
+              proof,
+              "0x"
             )
         )
           .to.be.revertedWithCustomError(main, "LatestEbnMismatch")
-          .withArgs(proof.leaf.withdrawLeaf.endEbn, payment.latestEbn)
+          .withArgs(proof.leaf.endEbn, payment.latestEbn)
       })
       it("leaf start ebn is too old", async () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 0n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 0n
+        proof.leaf.endEbn = 10n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
 
@@ -1208,31 +1107,31 @@ describe("main", () => {
             .connect(signers.dummyWithdraw)
             .closeChannelAsChallenge(
               createPaymentWithSignature(payment, signed),
-              proof
+              proof,
+              "0x"
             )
         )
           .to.be.revertedWithCustomError(main, "LeafStartEbnIsTooOld")
-          .withArgs(proof.leaf.withdrawLeaf.startEbn, 1)
+          .withArgs(proof.leaf.startEbn, 1)
       })
       it("airdropped amount mismatch", async () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = [1n, 2n, 3n, 5n]
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = [1n, 2n, 3n, 5n]
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 10n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
 
@@ -1241,68 +1140,32 @@ describe("main", () => {
             .connect(signers.dummyWithdraw)
             .closeChannelAsChallenge(
               createPaymentWithSignature(payment, signed),
-              proof
+              proof,
+              "0x"
             )
         )
           .to.be.revertedWithCustomError(main, "AirdroppedAmountMismatch")
           .withArgs([[1n, 2n, 3n, 5n]], [payment.airdropped.amounts])
       })
-      it("transfer commitment mismatch", async () => {
-        const [main, , payment] = await setupCloseChannel()
-        const signers = await getSigners()
-        payment.round = 2
-        payment.latestTransferCommitment = testHash3
-        payment.airdropped.amounts = [1n, 2n, 3n, 4n]
-        payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
-        const signed = await signPayment(
-          signers.user,
-          signers.operator,
-          payment
-        )
-        const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash2
-        proof.leaf.evidenceLeaf.ebn = 7n
-        proof.index = 1n
-        proof.siblings = [testHash1, testHash2]
-
-        await expect(
-          main
-            .connect(signers.dummyWithdraw)
-            .closeChannelAsChallenge(
-              createPaymentWithSignature(payment, signed),
-              proof
-            )
-        )
-          .to.be.revertedWithCustomError(main, "TransferCommitmentMismatch")
-          .withArgs(
-            proof.leaf.evidenceLeaf.transferCommitment,
-            payment.latestTransferCommitment
-          )
-      })
       it("spent more than deposit", async () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
         payment.spentDeposit.amounts = [11n, 11n, 12n, 13n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 10n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
 
@@ -1311,7 +1174,8 @@ describe("main", () => {
             .connect(signers.dummyWithdraw)
             .closeChannelAsChallenge(
               createPaymentWithSignature(payment, signed),
-              proof
+              proof,
+              "0x"
             )
         )
           .to.be.revertedWithCustomError(main, "SpentMoreThanDeposit")
@@ -1321,21 +1185,20 @@ describe("main", () => {
         const [main, , payment] = await setupCloseChannel()
         const signers = await getSigners()
         payment.round = 2
-        payment.latestTransferCommitment = testHash3
         payment.airdropped.amounts = [1n, 2n, 3n, 4n]
         payment.operatorBalance.amounts = [1n, 2n, 3n, 5n]
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 10n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
 
@@ -1344,7 +1207,8 @@ describe("main", () => {
             .connect(signers.dummyWithdraw)
             .closeChannelAsChallenge(
               createPaymentWithSignature(payment, signed),
-              proof
+              proof,
+              "0x"
             )
         )
           .to.be.revertedWithCustomError(main, "InvariantViolation")
@@ -1353,68 +1217,33 @@ describe("main", () => {
             [payment.operatorBalance.amounts]
           )
       })
-      it("invalid custom data length", async () => {
-        const [main, , payment] = await setupCloseChannel()
-        const signers = await getSigners()
-        payment.round = 2
-        payment.latestTransferCommitment = testHash3
-        payment.airdropped.amounts = [1n, 2n, 3n, 4n]
-        payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
-        payment.customData = ethers.hexlify(ethers.randomBytes(19))
-
-        const signed = await signPayment(
-          signers.user,
-          signers.operator,
-          payment
-        )
-        const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
-        proof.index = 1n
-        proof.siblings = [testHash1, testHash2]
-        await expect(
-          main
-            .connect(signers.dummyWithdraw)
-            .closeChannelAsChallenge(
-              createPaymentWithSignature(payment, signed),
-              proof
-            )
-        )
-          .to.be.revertedWithCustomError(main, "InvalidCustomDataLength")
-          .withArgs(payment.customData)
-      })
-      it("additional ZKPTLC verification failed", async () => {
+      it("ZKPTLC verification failed", async () => {
         const [main, , payment] = await setupCloseChannel()
         const testAdditionalZKPTLCFactory = await ethers.getContractFactory(
           "TestAdditionalZKPTLC"
         )
         const testAdditionalZKPTLC = await testAdditionalZKPTLCFactory.deploy()
-
-        const signers = await getSigners()
-        payment.round = 2
-        payment.latestTransferCommitment = testHash3
-        payment.airdropped.amounts = [1n, 2n, 3n, 4n]
-        payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
         const testAdditionalZKPTLCAddress =
           await testAdditionalZKPTLC.getAddress()
-        payment.customData = testAdditionalZKPTLCAddress + "93"
-        await testAdditionalZKPTLC.setVerifyAdditionalZKPTLCResult(false)
+        const signers = await getSigners()
+        payment.round = 2
+        payment.airdropped.amounts = [1n, 2n, 3n, 4n]
+        payment.operatorBalance.amounts = [1n, 2n, 3n, 4n]
+        payment.zkptlcAddress = testAdditionalZKPTLCAddress
+
+        await testAdditionalZKPTLC.setErrorFlg(true)
+        const identifier = await getUniqueIdentifier(await main.getAddress())
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         const proof = generateSettlementMerkleProofTemplate()
-        proof.leaf.withdrawLeaf.recipient = signers.user.address
-        proof.leaf.withdrawLeaf.amount.amounts = payment.airdropped.amounts
-        proof.leaf.withdrawLeaf.startEbn = 5n
-        proof.leaf.withdrawLeaf.endEbn = 10n
-        proof.leaf.evidenceLeaf.transferCommitment = testHash3
-        proof.leaf.evidenceLeaf.ebn = 7n
+        proof.leaf.recipient = signers.user.address
+        proof.leaf.amount.amounts = payment.airdropped.amounts
+        proof.leaf.startEbn = 5n
+        proof.leaf.endEbn = 10n
         proof.index = 1n
         proof.siblings = [testHash1, testHash2]
         await expect(
@@ -1422,13 +1251,11 @@ describe("main", () => {
             .connect(signers.dummyWithdraw)
             .closeChannelAsChallenge(
               createPaymentWithSignature(payment, signed),
-              proof
+              proof,
+              "0x"
             )
         )
-          .to.be.revertedWithCustomError(
-            main,
-            "AdditionalZKPTLCVerificationFailed"
-          )
+          .to.be.revertedWithCustomError(main, "ZKPTLCVerificationFailed")
           .withArgs(testAdditionalZKPTLCAddress)
       })
     })

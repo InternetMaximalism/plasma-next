@@ -7,6 +7,7 @@ async function main() {
   const signers = await ethers.getSigners()
   const operator = signers[1]
   const user = signers[2]
+  const someoneAddress = signers[3].address
   const userAddress = await user.getAddress()
   console.log("user:", userAddress)
 
@@ -18,11 +19,10 @@ async function main() {
   )
   await service.approveAll()
   await service.airdrop(100n, 0)
-  await service.airdrop(200n, 1)
-  await service.send(ethers.ZeroAddress, 50n, 0)
+  await service.send(someoneAddress, 50n, 0)
 
   console.log("before:", await getTokenBalance(userAddress))
-  await service.closeChannel()
+  await service.closeChannelForce()
   console.log("after:", await getTokenBalance(userAddress))
 }
 

@@ -8,9 +8,9 @@ contract TestSignature {
     using SignatureLib for IPayment.PaymentWithSignature;
 
     function verifyPaymentSignature(
+        IPayment.PaymentWithSignature memory paymentWithSignature,
         address operator,
-        address user,
-        IPayment.PaymentWithSignature memory paymentWithSignature
+        address user
     ) external view {
         paymentWithSignature.verifyPaymentSignature(operator, user);
     }

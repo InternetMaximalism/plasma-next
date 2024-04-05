@@ -34,6 +34,7 @@
     "@nomicfoundation/hardhat-verify": "2.0.3",
     "@nomiclabs/hardhat-etherscan": "3.1.7",
     "@openzeppelin/hardhat-upgrades": "3.0.2",
+    "@prb/math": "^4.0.2",
     "@typechain/ethers-v6": "0.5.1",
     "@typechain/hardhat": "9.1.0",
     "@types/chai": "4.3.5",

@@ -13,13 +13,14 @@ import {IState} from "../../common-interface/IState.sol";
 import {ILeaf} from "../../common-interface/ILeaf.sol";
 import {IPayment} from "../../common-interface/IPayment.sol";
 import {IMerkleProof} from "../../common-interface/IMerkleProof.sol";
-import {IAdditionalZKPTLC} from "../../common-interface/IAdditionalZKPTLC.sol";
+import {IZKPTLC} from "../../common-interface/IZKPTLC.sol";
 
 import {SignatureLib} from "../../utils/SignatureLib.sol";
 import {AssetLib} from "../../utils/AssetLib.sol";
 
 /**
  * @title Main contract
+ * @author Intmax
  * @notice This contract is the main contract of the payment channel.
  * It manages the channel state and the settlement of the payment.
  */
@@ -68,61 +69,41 @@ contract Main is AccessControlUpgradeable, UUPSUpgradeable, IMain {
         return SignatureLib.getUniqueIdentifier();
     }
 
-    /**
-     * @dev Verify the custom data
-     * @param customData The first 20 bytes are the address of AdditionalZKPTLC,
-     * and the latter is the data passed to verifyAdditionalZKPTLC of AdditionalZKPTLC.
-     */
-    function _verifyCustomData(bytes memory customData) internal view {
-        if (customData.length > 0) {
-            if (customData.length <= 20) {
-                revert InvalidCustomDataLength(customData);
-            }
-            // Extract additional ZKPTLC address from customData
-            address additionalZKPTLCAddress;
-            // solhint-disable-next-line no-inline-assembly
-            assembly {
-                additionalZKPTLCAddress := mload(add(customData, 20))
-            }
-            bytes memory remainingData = new bytes(customData.length - 20);
-            for (uint i = 20; i < customData.length; i++) {
-                remainingData[i - 20] = customData[i];
-            }
-            if (
-                !IAdditionalZKPTLC(additionalZKPTLCAddress)
-                    .verifyAdditionalZKPTLC(remainingData)
-            ) {
-                revert AdditionalZKPTLCVerificationFailed(
-                    additionalZKPTLCAddress
-                );
+    function _verifyZKPTLC(
+        address zkptlcAddress,
+        bytes32 instance,
+        bytes memory witness
+    ) internal view returns (IAsset.AssetsDelta memory toOperatorDelta) {
+        if (zkptlcAddress != address(0)) {
+            try
+                IZKPTLC(zkptlcAddress).verifyCondition(instance, witness)
+            returns (IAsset.AssetsDelta memory toOperatorDelta_) {
+                return toOperatorDelta_;
+            } catch {
+                revert ZKPTLCVerificationFailed(zkptlcAddress);
             }
         }
+        IAsset.AssetsDelta memory zero;
+        return zero; // if there is no zkptlc, return zero
     }
 
     /// @dev Verify the payment and the settlement merkle proof
     /// @param user The user address
     /// @param paymentWithSignature The payment with the user and operator signatures
-    /// @param settlementProof The settlement merkle proof
+    /// @param withdrawProof The withdraw merkle proof
     function _verifyPayment(
         address user,
         IPayment.PaymentWithSignature memory paymentWithSignature,
-        IMerkleProof.SettlementMerkleProof memory settlementProof
+        IMerkleProof.WithdrawWithMerkleProof memory withdrawProof
     ) private view {
         paymentWithSignature.verifyPaymentSignature(operator, user);
-        IRootManager(rootManagerAddress).verifySettlementMerkleProof(
-            settlementProof
+        IRootManager(rootManagerAddress).verifyWithdrawMerkleProof(
+            withdrawProof
         );
-        _verifyCustomData(paymentWithSignature.payment.customData);
         // verify consistency of the payment
         IState.ChannelState memory channelState = channelStates[user];
         IPayment.Payment memory payment = paymentWithSignature.payment;
-        ILeaf.WithdrawLeaf memory withdrawLeaf = settlementProof
-            .leaf
-            .withdrawLeaf;
-        ILeaf.EvidenceLeaf memory evidenceLeaf = settlementProof
-            .leaf
-            .evidenceLeaf;
-
+        ILeaf.WithdrawLeaf memory withdrawLeaf = withdrawProof.leaf;
         if (withdrawLeaf.recipient != user) {
             revert RecipientMismatch({
                 leafRecipient: withdrawLeaf.recipient,
@@ -159,18 +140,6 @@ contract Main is AccessControlUpgradeable, UUPSUpgradeable, IMain {
                 paymentAirdroppedAmount: payment.airdropped
             });
         }
-        // ignore the lastest transfer commitment if it is 0x0
-        if (payment.latestTransferCommitment != 0x0) {
-            if (
-                evidenceLeaf.transferCommitment !=
-                payment.latestTransferCommitment
-            ) {
-                revert TransferCommitmentMismatch({
-                    leafTransferCommitment: evidenceLeaf.transferCommitment,
-                    paymentTransferCommitment: payment.latestTransferCommitment
-                });
-            }
-        }
         // verify that deposit amount
         if (!payment.spentDeposit.isLe(channelState.userDeposit)) {
             revert SpentMoreThanDeposit({
@@ -196,6 +165,7 @@ contract Main is AccessControlUpgradeable, UUPSUpgradeable, IMain {
     /// @dev Settle the payment, update the channel state, and send the assets
     function _settle(
         IPayment.Payment memory payment,
+        IAsset.AssetsDelta memory toOperatorDelta,
         IAsset.Assets memory redeposit
     ) private {
         address user = payment.user;
@@ -203,9 +173,10 @@ contract Main is AccessControlUpgradeable, UUPSUpgradeable, IMain {
         IAsset.Assets memory remainedDeposit = channelState.userDeposit.sub(
             payment.spentDeposit
         );
-        IAsset.Assets memory totalUserBalance = payment.userBalance.add(
-            remainedDeposit
-        );
+        IAsset.Assets memory totalUserBalance = payment
+            .userBalance
+            .add(remainedDeposit)
+            .subDelta(toOperatorDelta);
         if (totalUserBalance.isLe(redeposit)) {
             redeposit = totalUserBalance; // avoid underflow
         }
@@ -215,9 +186,12 @@ contract Main is AccessControlUpgradeable, UUPSUpgradeable, IMain {
             ebn: payment.latestEbn,
             round: channelState.round + 1
         });
+        IAsset.Assets memory totalOperatorBalance = payment
+            .operatorBalance
+            .addDelta(toOperatorDelta);
         ILiquidityManager(liquidityManagerAddress).sendAssets(
             operator,
-            payment.operatorBalance
+            totalOperatorBalance
         );
         ILiquidityManager(liquidityManagerAddress).sendAssets(
             payment.user,
@@ -239,28 +213,40 @@ contract Main is AccessControlUpgradeable, UUPSUpgradeable, IMain {
      * @dev This function is called by the operator. if the user wants to close the channel by themself,
      * the user should call `withdraw` function.
      * @param paymentWithSignature The payment with the user and operator signatures
-     * @param settlementProof The settlement merkle proof
+     * @param withdrawProof The withdraw merkle proof
      * @param redeposit The amount of the deposit that the user wants to redeposit
      */
     function closeChannel(
         IPayment.PaymentWithSignature memory paymentWithSignature,
-        IMerkleProof.SettlementMerkleProof memory settlementProof,
+        IMerkleProof.WithdrawWithMerkleProof memory withdrawProof,
+        bytes memory zktlcWitness,
         IAsset.Assets memory redeposit
     ) external onlyRole(OPERATOR) {
         address user = paymentWithSignature.payment.user;
-        _verifyPayment(user, paymentWithSignature, settlementProof);
-        _settle(paymentWithSignature.payment, redeposit);
+        IAsset.AssetsDelta memory toOperatorDelta = _verifyZKPTLC(
+            paymentWithSignature.payment.zkptlcAddress,
+            paymentWithSignature.payment.zkptlcInstance,
+            zktlcWitness
+        );
+        _verifyPayment(user, paymentWithSignature, withdrawProof);
+        _settle(paymentWithSignature.payment, toOperatorDelta, redeposit);
         emit ChannelClosed(user, paymentWithSignature.payment.round);
     }
 
     function closeChannelAsChallenge(
         IPayment.PaymentWithSignature memory paymentWithSignature,
-        IMerkleProof.SettlementMerkleProof memory settlementProof
+        IMerkleProof.WithdrawWithMerkleProof memory withdrawProof,
+        bytes memory zktlcWitness
     ) external onlyRole(INNER_GROUP) {
         address user = paymentWithSignature.payment.user;
-        _verifyPayment(user, paymentWithSignature, settlementProof);
+        IAsset.AssetsDelta memory toOperatorDelta = _verifyZKPTLC(
+            paymentWithSignature.payment.zkptlcAddress,
+            paymentWithSignature.payment.zkptlcInstance,
+            zktlcWitness
+        );
+        _verifyPayment(user, paymentWithSignature, withdrawProof);
         IAsset.Assets memory zeroAssets;
-        _settle(paymentWithSignature.payment, zeroAssets);
+        _settle(paymentWithSignature.payment, toOperatorDelta, zeroAssets);
         emit ChannelClosed(user, paymentWithSignature.payment.round);
     }
 

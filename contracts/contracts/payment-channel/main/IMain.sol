@@ -7,8 +7,7 @@ import {IPayment} from "../../common-interface/IPayment.sol";
 import {IMerkleProof} from "../../common-interface/IMerkleProof.sol";
 
 interface IMain {
-    error InvalidCustomDataLength(bytes customData);
-    error AdditionalZKPTLCVerificationFailed(address additionalZKPTLCAddress);
+    error ZKPTLCVerificationFailed(address zkptlcAddress);
     error RoundMismatch(uint32 channelRound, uint32 paymentRound);
     error RecipientMismatch(address leafRecipient, address user);
     error EbnSanityCheckFailed(uint64 startEbn, uint64 endEbn);
@@ -17,10 +16,6 @@ interface IMain {
     error AirdroppedAmountMismatch(
         IAsset.Assets leafAirdroppedAmount,
         IAsset.Assets paymentAirdroppedAmount
-    );
-    error TransferCommitmentMismatch(
-        bytes32 leafTransferCommitment,
-        bytes32 paymentTransferCommitment
     );
     error SpentMoreThanDeposit(
         IAsset.Assets spentDepositInPayment,
@@ -47,13 +42,15 @@ interface IMain {
 
     function closeChannel(
         IPayment.PaymentWithSignature memory paymentWithSignature,
-        IMerkleProof.SettlementMerkleProof memory settlementProof,
+        IMerkleProof.WithdrawWithMerkleProof memory withdrawProof,
+        bytes memory zktlcWitness,
         IAsset.Assets memory redeposit
     ) external;
 
     function closeChannelAsChallenge(
         IPayment.PaymentWithSignature memory paymentWithSignature,
-        IMerkleProof.SettlementMerkleProof memory settlementProof
+        IMerkleProof.WithdrawWithMerkleProof memory withdrawProof,
+        bytes memory zktlcWitness
     ) external;
 
     function getChannelState(

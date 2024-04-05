@@ -6,6 +6,10 @@ interface IAsset {
         uint256[4] amounts;
     }
 
+    struct AssetsDelta {
+        int256[4] amounts;
+    }
+
     struct AssetsAddress {
         address[4] addresses;
     }

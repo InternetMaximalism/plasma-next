@@ -18,9 +18,10 @@ describe("TransferLib", () => {
         recipient: testAddress1,
         amount: 12,
         assetId: 1,
+        nonce: 2,
       })
       expect(result).to.equal(
-        "0x82f2ae276e0d5ab225977d1edca8a49236fccb5e95ff6f6d182122e6e045013f"
+        "0x6b7fff8df3d87e5eeee1909bf3ab64c0a50fadad9f3b80ca908f55a750c34bb0"
       )
     })
   })

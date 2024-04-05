@@ -5,7 +5,6 @@ import {IAsset} from "./IAsset.sol";
 
 interface IPayment is IAsset {
     struct Payment {
-        bytes32 uniqueIdentifier;
         address user; // the address of the user.
         uint32 round; // incremented every time the payment channel is closed.
         uint32 nonce; // incremented every time the payment channel is updated.
@@ -13,9 +12,9 @@ interface IPayment is IAsset {
         Assets operatorBalance;
         Assets airdropped; // the amount of airdrop to this user.
         Assets spentDeposit; // the total amount of spent deposit.
-        bytes32 latestTransferCommitment; // the latest transfer commitment of the transfer to other user.
         uint64 latestEbn; // the latest ebn of airdrop to this user.
-        bytes customData; // the custom data of the payment channel.
+        address zkptlcAddress; // the address of zkptlc.
+        bytes32 zkptlcInstance; // the instance of zkptlc.
     }
 
     struct PaymentWithSignature {

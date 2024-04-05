@@ -5,6 +5,7 @@ import {IAsset} from "../../common-interface/IAsset.sol";
 import {IPayment} from "../../common-interface/IPayment.sol";
 import {IMerkleProof} from "../../common-interface/IMerkleProof.sol";
 import {ITransfer} from "../../common-interface/ITransfer.sol";
+import {IState} from "../../common-interface/IState.sol";
 
 interface IWithdraw {
     // error types for `withdrawRequest`
@@ -34,20 +35,21 @@ interface IWithdraw {
     ) external;
 
     function requestWithdrawal(
-        IMerkleProof.SettlementMerkleProof memory settlementProof,
+        IMerkleProof.WithdrawWithMerkleProof memory withdrawProof,
         IAsset.Assets memory redeposit
     ) external;
 
     function requestWithdrawalWithEvidence(
         ITransfer.Transfer memory transfer,
-        IMerkleProof.SettlementMerkleProof memory settlementProof,
+        IMerkleProof.EvidenceWithMerkleProof memory evidenceProof,
         IAsset.Assets memory redeposit
     ) external;
 
     function challengeWithdrawal(
         address user,
         IPayment.PaymentWithSignature memory paymentWithSignature,
-        IMerkleProof.SettlementMerkleProof memory settlementProof
+        IMerkleProof.WithdrawWithMerkleProof memory withdrawProof,
+        bytes memory zktlcWitness
     ) external;
 
     function acceptWithdrawal(address user) external;

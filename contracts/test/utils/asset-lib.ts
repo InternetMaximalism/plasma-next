@@ -115,4 +115,16 @@ describe("AssetLib", () => {
       expect(result.amounts).to.deep.equal([4n, 4n, 0n, 1n])
     })
   })
+
+  describe("hash", () => {
+    it("get amounts hash", async () => {
+      const assetLib = await loadFixture(setup)
+      const result = await assetLib.hash({
+        amounts: [5n, 6n, 3n, 2n],
+      })
+      expect(result).to.deep.equal(
+        "0x8dd3a5a3f5042d8c7cd959c41776bdf52b00647ab9e72ca67f3556c1f9b57ca2"
+      )
+    })
+  })
 })

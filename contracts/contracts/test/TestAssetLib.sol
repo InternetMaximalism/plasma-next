@@ -45,4 +45,8 @@ contract TestAssetLib {
     ) external pure returns (IAsset.Assets memory) {
         return left.sub(right);
     }
+
+    function hash(IAsset.Assets memory left) external pure returns (bytes32) {
+        return left.hash();
+    }
 }

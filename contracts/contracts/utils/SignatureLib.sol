@@ -9,7 +9,6 @@ library SignatureLib {
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
 
-    error InvalidUniqueIdentifier(bytes32 expected, bytes32 got);
     error InvalidUserSignature(address expected, address recovered);
     error InvalidOperatorSignature(address expected, address recovered);
     error UserMismatch(address expected, address got);
@@ -24,20 +23,14 @@ library SignatureLib {
         address operator,
         address user
     ) internal view {
-        bytes32 uniqueIdentifier = getUniqueIdentifier();
         IPayment.Payment memory payment = paymentWithSignature.payment;
         if (payment.user != user) {
             revert UserMismatch(user, payment.user);
         }
-        if (payment.uniqueIdentifier != uniqueIdentifier) {
-            revert InvalidUniqueIdentifier(
-                uniqueIdentifier,
-                payment.uniqueIdentifier
-            );
-        }
+        bytes32 uniqueIdentifier = getUniqueIdentifier();
         bytes32 hash = keccak256(
             abi.encodePacked(
-                payment.uniqueIdentifier,
+                uniqueIdentifier,
                 payment.user,
                 payment.round,
                 payment.nonce,
@@ -45,9 +38,9 @@ library SignatureLib {
                 payment.operatorBalance.amounts,
                 payment.airdropped.amounts,
                 payment.spentDeposit.amounts,
-                payment.latestTransferCommitment,
                 payment.latestEbn,
-                payment.customData
+                payment.zkptlcAddress,
+                payment.zkptlcInstance
             )
         );
         bytes32 ethSignedHash = hash.toEthSignedMessageHash();

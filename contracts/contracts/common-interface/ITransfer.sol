@@ -6,5 +6,6 @@ interface ITransfer {
         address recipient;
         uint256 amount;
         uint32 assetId;
+        uint32 nonce;
     }
 }

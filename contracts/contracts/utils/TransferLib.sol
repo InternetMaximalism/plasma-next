@@ -12,7 +12,8 @@ library TransferLib {
                 abi.encodePacked(
                     transfer.recipient,
                     transfer.amount,
-                    transfer.assetId
+                    transfer.assetId,
+                    transfer.nonce
                 )
             );
     }

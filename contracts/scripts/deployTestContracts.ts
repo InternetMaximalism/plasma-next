@@ -15,11 +15,13 @@ async function main() {
     "Halo2VerifyingKey"
   )
   const halo2VerifyingKey = await halo2VerifyingKeyFactory.deploy()
-  const halo2VerifierFactory = await ethers.getContractFactory("Halo2Verifier")
+  const halo2VerifierFactory = await ethers.getContractFactory(
+    "MockHalo2Verifier"
+  )
   const halo2Verifier = await halo2VerifierFactory.deploy()
   const verifierFactory = await ethers.getContractFactory("Verifier")
   const verifier = await verifierFactory.deploy(admin)
-  const rootManagerFactory = await ethers.getContractFactory("TestRootManager")
+  const rootManagerFactory = await ethers.getContractFactory("RootManager")
   const rootManager = await upgrades.deployProxy(rootManagerFactory, [admin], {
     kind: "uups",
   })
@@ -50,6 +52,11 @@ async function main() {
   const withdraw = await upgrades.deployProxy(withdrawFactory, [admin], {
     kind: "uups",
   })
+  const defaultZKPTLCFactory = await ethers.getContractFactory("DefaultZKPTLC")
+  const defaultZKPTLC = await defaultZKPTLCFactory.deploy(
+    await rootManager.getAddress()
+  )
+
   const tokensAddresses = {
     addresses: Object.values(tokens) as [string, string, string, string],
   }
@@ -67,6 +74,7 @@ async function main() {
     liquidityManager: await liquidityManager.getAddress(),
     main: await main.getAddress(),
     withdraw: await withdraw.getAddress(),
+    defaultZKPTLC: await defaultZKPTLC.getAddress(),
   }
 
   saveJsonToFile(

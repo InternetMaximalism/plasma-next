@@ -37,7 +37,7 @@ contract Verifier is IVerifier, AccessControl {
         IVerifier.PublicInputs memory pis
     ) private pure returns (uint256[] memory) {
         bytes32 h = keccak256(
-            abi.encodePacked(pis.blockHash, pis.settlementRoot)
+            abi.encodePacked(pis.blockHash, pis.evidenceRoot, pis.withdrawRoot)
         );
         uint32[8] memory result;
         for (uint i = 0; i < 8; i++) {

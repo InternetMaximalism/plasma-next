@@ -4,7 +4,17 @@ pragma solidity 0.8.23;
 import {IAsset} from "../common-interface/IAsset.sol";
 
 interface IBlockManager {
-    error BlockNumberTooBig(uint32 blockNumber, uint32 latestBlockNumber);
+    error BlockHashNotAvailable(
+        uint32 blockNumber,
+        uint32 lastBlockNumber,
+        uint32 lastCheckpoint
+    );
+
+    error VerifyInclusionFailed(
+        uint32 blockNumber,
+        bytes32 computedBlockHash,
+        bytes32 actualBlockHash
+    );
 
     struct Block {
         bytes32 prevBlockHash;
@@ -13,20 +23,17 @@ interface IBlockManager {
         uint32 blockNumber;
     }
 
-    event Deposited(IAsset.Assets assets);
+    event Deposited(
+        IAsset.Assets deposit,
+        IAsset.Assets totalDeposit,
+        bytes32 totalDepositHash
+    );
 
     event BlockPosted(
         uint256 indexed blockNumber,
-        bytes32 indexed blockHash,
         bytes32 prevBlockHash,
         bytes32 transferRoot,
-        IAsset.Assets totalDeposit
-    );
-
-    event BlockHashRelayed(
-        uint32 indexed blockNumber,
-        bool indexed isDestL2,
-        bytes32 indexed blockHash
+        bytes32 totalDepositHash
     );
 
     function config(
@@ -34,12 +41,16 @@ interface IBlockManager {
         address liquidityManagerAddress_
     ) external;
 
-    function depositAndPostBlocks(
+    function deposit(IAsset.Assets memory amount) external;
+
+    function postBlocks(bytes32[] memory transferRoots) external;
+
+    function verifyInclusion(
+        uint32 targetBlockNumber,
+        bytes32 targetBlockHash,
         bytes32[] memory transferRoots,
-        IAsset.Assets memory amounts
-    ) external;
+        bytes32[] memory totalDepositHashes
+    ) external view;
 
-    function getBlockHash(uint32 blockNumber) external view returns (bytes32);
-
-    function getLatestBlockNumber() external view returns (uint256);
+    function getLastCheckpointBlockNumber() external view returns (uint32);
 }

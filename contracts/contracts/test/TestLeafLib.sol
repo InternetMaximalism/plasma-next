@@ -5,10 +5,17 @@ import {ILeaf} from "../common-interface/ILeaf.sol";
 import {LeafLib} from "../utils/LeafLib.sol";
 
 contract TestLeafLib {
-    using LeafLib for ILeaf.SettlementLeaf;
+    using LeafLib for ILeaf.WithdrawLeaf;
+    using LeafLib for ILeaf.EvidenceLeaf;
 
-    function hashSettlementLeaf(
-        ILeaf.SettlementLeaf memory leaf
+    function hashWithdrawLeaf(
+        ILeaf.WithdrawLeaf memory leaf
+    ) external pure returns (bytes32) {
+        return leaf.hashLeaf();
+    }
+
+    function hashEvidenceLeaf(
+        ILeaf.EvidenceLeaf memory leaf
     ) external pure returns (bytes32) {
         return leaf.hashLeaf();
     }
