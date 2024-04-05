@@ -88,16 +88,10 @@ describe("Withdraw", () => {
     await withdraw.connect(signers.user).requestWithdrawal(
       {
         leaf: {
-          withdrawLeaf: {
-            recipient: signers.user.address,
-            amount: tmp,
-            startEbn: 11n,
-            endEbn: 15n,
-          },
-          evidenceLeaf: {
-            transferCommitment: testHashes[0],
-            ebn: 4n,
-          },
+          recipient: signers.user.address,
+          amount: tmp,
+          startEbn: 11n,
+          endEbn: 15n,
         },
         index: 0n,
         siblings: [testHashes[1], testHashes[2]],
@@ -113,16 +107,10 @@ describe("Withdraw", () => {
     await withdraw.connect(signers.user).requestWithdrawal(
       {
         leaf: {
-          withdrawLeaf: {
-            recipient: signers.user.address,
-            amount: withdrawLeafAmounts,
-            startEbn: 11n,
-            endEbn: 15n,
-          },
-          evidenceLeaf: {
-            transferCommitment: testHashes[0],
-            ebn: 4n,
-          },
+          recipient: signers.user.address,
+          amount: withdrawLeafAmounts,
+          startEbn: 11n,
+          endEbn: 15n,
         },
         index: 0n,
         siblings: [testHashes[1], testHashes[2]],
@@ -208,16 +196,10 @@ describe("Withdraw", () => {
         await withdraw.connect(signers.user).requestWithdrawal(
           {
             leaf: {
-              withdrawLeaf: {
-                recipient: signers.user.address,
-                amount: withdrawLeafAmounts,
-                startEbn: 11n,
-                endEbn: 15n,
-              },
-              evidenceLeaf: {
-                transferCommitment: testHashes[0],
-                ebn: 4n,
-              },
+              recipient: signers.user.address,
+              amount: withdrawLeafAmounts,
+              startEbn: 11n,
+              endEbn: 15n,
             },
             index: 0n,
             siblings: [testHashes[1], testHashes[2]],
@@ -242,16 +224,10 @@ describe("Withdraw", () => {
           withdraw.connect(signers.user).requestWithdrawal(
             {
               leaf: {
-                withdrawLeaf: {
-                  recipient: signers.user.address,
-                  amount: withdrawLeafAmounts,
-                  startEbn: 11n,
-                  endEbn: 15n,
-                },
-                evidenceLeaf: {
-                  transferCommitment: testHashes[0],
-                  ebn: 4n,
-                },
+                recipient: signers.user.address,
+                amount: withdrawLeafAmounts,
+                startEbn: 11n,
+                endEbn: 15n,
               },
               index: 0n,
               siblings: [testHashes[1], testHashes[2]],
@@ -272,16 +248,10 @@ describe("Withdraw", () => {
           withdraw.requestWithdrawal(
             {
               leaf: {
-                withdrawLeaf: {
-                  recipient: signers.user.address,
-                  amount: withdrawLeafAmounts,
-                  startEbn: 11n,
-                  endEbn: 15n,
-                },
-                evidenceLeaf: {
-                  transferCommitment: testHashes[0],
-                  ebn: 4n,
-                },
+                recipient: signers.user.address,
+                amount: withdrawLeafAmounts,
+                startEbn: 11n,
+                endEbn: 15n,
               },
               index: 0n,
               siblings: [testHashes[1], testHashes[2]],
@@ -300,16 +270,10 @@ describe("Withdraw", () => {
           withdraw.connect(signers.user).requestWithdrawal(
             {
               leaf: {
-                withdrawLeaf: {
-                  recipient: signers.user.address,
-                  amount: withdrawLeafAmounts,
-                  startEbn: 16n,
-                  endEbn: 15n,
-                },
-                evidenceLeaf: {
-                  transferCommitment: testHashes[0],
-                  ebn: 4n,
-                },
+                recipient: signers.user.address,
+                amount: withdrawLeafAmounts,
+                startEbn: 16n,
+                endEbn: 15n,
               },
               index: 0n,
               siblings: [testHashes[1], testHashes[2]],
@@ -329,16 +293,10 @@ describe("Withdraw", () => {
           withdraw.connect(signers.user).requestWithdrawal(
             {
               leaf: {
-                withdrawLeaf: {
-                  recipient: signers.user.address,
-                  amount: withdrawLeafAmounts,
-                  startEbn: 11n,
-                  endEbn: 15n,
-                },
-                evidenceLeaf: {
-                  transferCommitment: testHashes[0],
-                  ebn: 4n,
-                },
+                recipient: signers.user.address,
+                amount: withdrawLeafAmounts,
+                startEbn: 11n,
+                endEbn: 15n,
               },
               index: 0n,
               siblings: [testHashes[1], testHashes[2]],
@@ -356,16 +314,10 @@ describe("Withdraw", () => {
         await withdraw.connect(signers.user).requestWithdrawal(
           {
             leaf: {
-              withdrawLeaf: {
-                recipient: signers.user.address,
-                amount: withdrawLeafAmounts,
-                startEbn: 11n,
-                endEbn: 15n,
-              },
-              evidenceLeaf: {
-                transferCommitment: testHashes[0],
-                ebn: 4n,
-              },
+              recipient: signers.user.address,
+              amount: withdrawLeafAmounts,
+              startEbn: 11n,
+              endEbn: 15n,
             },
             index: 0n,
             siblings: [testHashes[1], testHashes[2]],
@@ -376,16 +328,10 @@ describe("Withdraw", () => {
           withdraw.connect(signers.user).requestWithdrawal(
             {
               leaf: {
-                withdrawLeaf: {
-                  recipient: signers.user.address,
-                  amount: withdrawLeafAmounts,
-                  startEbn: 11n,
-                  endEbn: 15n,
-                },
-                evidenceLeaf: {
-                  transferCommitment: testHashes[0],
-                  ebn: 4n,
-                },
+                recipient: signers.user.address,
+                amount: withdrawLeafAmounts,
+                startEbn: 11n,
+                endEbn: 15n,
               },
               index: 0n,
               siblings: [testHashes[1], testHashes[2]],
@@ -413,20 +359,13 @@ describe("Withdraw", () => {
             recipient: testAddress1,
             amount: 2n,
             assetId: 0n,
+            nonce: 1n,
           },
           {
             leaf: {
-              withdrawLeaf: {
-                recipient: signers.user.address,
-                amount: withdrawLeafAmounts,
-                startEbn: 11n,
-                endEbn: 15n,
-              },
-              evidenceLeaf: {
-                transferCommitment:
-                  "0x1dc73b3c28607bdd2e8c9fd554516e95a5b636dc2bc8d71401476ce2aa42a11e",
-                ebn: 20n,
-              },
+              transferCommitment:
+                "0x7b8cd19db5426c0e5db461bbcf80bf0d6cb9bd4e2a493ab83ed8ab393e0ee13e",
+              ebn: 20n,
             },
             index: 0n,
             siblings: [testHashes[1], testHashes[2]],
@@ -451,20 +390,13 @@ describe("Withdraw", () => {
               recipient: testAddress1,
               amount: 2n,
               assetId: 0n,
+              nonce: 1n,
             },
             {
               leaf: {
-                withdrawLeaf: {
-                  recipient: signers.user.address,
-                  amount: withdrawLeafAmounts,
-                  startEbn: 11n,
-                  endEbn: 15n,
-                },
-                evidenceLeaf: {
-                  transferCommitment:
-                    "0x1dc73b3c28607bdd2e8c9fd554516e95a5b636dc2bc8d71401476ce2aa42a11e",
-                  ebn: 20n,
-                },
+                transferCommitment:
+                  "0x7b8cd19db5426c0e5db461bbcf80bf0d6cb9bd4e2a493ab83ed8ab393e0ee13e",
+                ebn: 20n,
               },
               index: 0n,
               siblings: [testHashes[1], testHashes[2]],
@@ -479,7 +411,6 @@ describe("Withdraw", () => {
     describe("fail", () => {
       it("transfer commitment mismatch", async () => {
         const [withdraw] = await setupRequestWithdrawal()
-        const signers = await getSigners()
         const testHashes = generateDummyHashes(3)
         await expect(
           withdraw.requestWithdrawalWithEvidence(
@@ -487,19 +418,12 @@ describe("Withdraw", () => {
               recipient: testAddress1,
               amount: 2n,
               assetId: 0n,
+              nonce: 1n,
             },
             {
               leaf: {
-                withdrawLeaf: {
-                  recipient: signers.user.address,
-                  amount: withdrawLeafAmounts,
-                  startEbn: 11n,
-                  endEbn: 15n,
-                },
-                evidenceLeaf: {
-                  transferCommitment: testHashes[0],
-                  ebn: 4n,
-                },
+                transferCommitment: testHashes[0],
+                ebn: 4n,
               },
               index: 0n,
               siblings: [testHashes[1], testHashes[2]],
@@ -510,7 +434,7 @@ describe("Withdraw", () => {
           .to.be.revertedWithCustomError(withdraw, "TransferCommitmentMismatch")
           .withArgs(
             testHashes[0],
-            "0x1dc73b3c28607bdd2e8c9fd554516e95a5b636dc2bc8d71401476ce2aa42a11e"
+            "0x7b8cd19db5426c0e5db461bbcf80bf0d6cb9bd4e2a493ab83ed8ab393e0ee13e"
           )
       })
       it("evidence leaf ebn is too old", async () => {
@@ -523,20 +447,13 @@ describe("Withdraw", () => {
               recipient: testAddress1,
               amount: 2n,
               assetId: 0n,
+              nonce: 1n,
             },
             {
               leaf: {
-                withdrawLeaf: {
-                  recipient: signers.user.address,
-                  amount: withdrawLeafAmounts,
-                  startEbn: 16n,
-                  endEbn: 15n,
-                },
-                evidenceLeaf: {
-                  transferCommitment:
-                    "0x1dc73b3c28607bdd2e8c9fd554516e95a5b636dc2bc8d71401476ce2aa42a11e",
-                  ebn: 4n,
-                },
+                transferCommitment:
+                  "0x7b8cd19db5426c0e5db461bbcf80bf0d6cb9bd4e2a493ab83ed8ab393e0ee13e",
+                ebn: 4n,
               },
               index: 0n,
               siblings: [testHashes[1], testHashes[2]],
@@ -557,20 +474,13 @@ describe("Withdraw", () => {
             recipient: testAddress1,
             amount: 2n,
             assetId: 0n,
+            nonce: 1n,
           },
           {
             leaf: {
-              withdrawLeaf: {
-                recipient: signers.user.address,
-                amount: withdrawLeafAmounts,
-                startEbn: 11n,
-                endEbn: 15n,
-              },
-              evidenceLeaf: {
-                transferCommitment:
-                  "0x1dc73b3c28607bdd2e8c9fd554516e95a5b636dc2bc8d71401476ce2aa42a11e",
-                ebn: 20n,
-              },
+              transferCommitment:
+                "0x7b8cd19db5426c0e5db461bbcf80bf0d6cb9bd4e2a493ab83ed8ab393e0ee13e",
+              ebn: 20n,
             },
             index: 0n,
             siblings: [testHashes[1], testHashes[2]],
@@ -583,20 +493,13 @@ describe("Withdraw", () => {
               recipient: testAddress1,
               amount: 2n,
               assetId: 0n,
+              nonce: 1n,
             },
             {
               leaf: {
-                withdrawLeaf: {
-                  recipient: signers.user.address,
-                  amount: withdrawLeafAmounts,
-                  startEbn: 11n,
-                  endEbn: 15n,
-                },
-                evidenceLeaf: {
-                  transferCommitment:
-                    "0x1dc73b3c28607bdd2e8c9fd554516e95a5b636dc2bc8d71401476ce2aa42a11e",
-                  ebn: 20n,
-                },
+                transferCommitment:
+                  "0x7b8cd19db5426c0e5db461bbcf80bf0d6cb9bd4e2a493ab83ed8ab393e0ee13e",
+                ebn: 20n,
               },
               index: 0n,
               siblings: [testHashes[1], testHashes[2]],
@@ -618,8 +521,8 @@ describe("Withdraw", () => {
       it("delete withdraw requests", async () => {
         const withdraw = await setupChallengeWithdrawal()
         const signers = await getSigners()
-        const testHashes = generateDummyHashes(3)
-        const testAddress = generateDummyAddresses(1)
+        const testHashes = generateDummyHashes(4)
+        const testAddress = generateDummyAddresses(2)
         const withdrawalRequests = await withdraw.withdrawalRequests(
           signers.user.address
         )
@@ -644,29 +547,24 @@ describe("Withdraw", () => {
               spentDeposit: {
                 amounts: [1n, 2n, 3n, 4n],
               },
-              latestTransferCommitment: testHashes[1],
               latestEbn: 0n,
-              customData: "0x",
+              zkptlcAddress: testAddress[1],
+              zkptlcInstance: testHashes[3],
             },
             userSignature: "0x",
             operatorSignature: "0x",
           },
           {
             leaf: {
-              withdrawLeaf: {
-                recipient: signers.user.address,
-                amount: withdrawLeafAmounts,
-                startEbn: 11n,
-                endEbn: 15n,
-              },
-              evidenceLeaf: {
-                transferCommitment: testHashes[0],
-                ebn: 4n,
-              },
+              recipient: signers.user.address,
+              amount: withdrawLeafAmounts,
+              startEbn: 11n,
+              endEbn: 15n,
             },
             index: 0n,
             siblings: [testHashes[1], testHashes[2]],
-          }
+          },
+          "0x"
         )
         const withdrawalRequestsAfter = await withdraw.withdrawalRequests(
           signers.user.address
@@ -676,8 +574,8 @@ describe("Withdraw", () => {
       it("generate WithdrawalChallenged event", async () => {
         const withdraw = await setupChallengeWithdrawal()
         const signers = await getSigners()
-        const testHashes = generateDummyHashes(3)
-        const testAddress = generateDummyAddresses(1)
+        const testHashes = generateDummyHashes(4)
+        const testAddress = generateDummyAddresses(2)
         await expect(
           withdraw.connect(signers.operator).challengeWithdrawal(
             signers.user.address,
@@ -699,29 +597,24 @@ describe("Withdraw", () => {
                 spentDeposit: {
                   amounts: [1n, 2n, 3n, 4n],
                 },
-                latestTransferCommitment: testHashes[1],
                 latestEbn: 0n,
-                customData: "0x",
+                zkptlcAddress: testAddress[1],
+                zkptlcInstance: testHashes[3],
               },
               userSignature: "0x",
               operatorSignature: "0x",
             },
             {
               leaf: {
-                withdrawLeaf: {
-                  recipient: signers.user.address,
-                  amount: withdrawLeafAmounts,
-                  startEbn: 11n,
-                  endEbn: 15n,
-                },
-                evidenceLeaf: {
-                  transferCommitment: testHashes[0],
-                  ebn: 4n,
-                },
+                recipient: signers.user.address,
+                amount: withdrawLeafAmounts,
+                startEbn: 11n,
+                endEbn: 15n,
               },
               index: 0n,
               siblings: [testHashes[1], testHashes[2]],
-            }
+            },
+            "0x"
           )
         )
           .to.emit(withdraw, "WithdrawalChallenged")
@@ -733,8 +626,8 @@ describe("Withdraw", () => {
         const [withdraw] = await loadFixture(setup)
         const signers = await getSigners()
         const role = await withdraw.OPERATOR()
-        const testHashes = generateDummyHashes(3)
-        const testAddress = generateDummyAddresses(1)
+        const testHashes = generateDummyHashes(4)
+        const testAddress = generateDummyAddresses(2)
         await expect(
           withdraw.connect(signers.illegalUser).challengeWithdrawal(
             signers.user.address,
@@ -756,29 +649,24 @@ describe("Withdraw", () => {
                 spentDeposit: {
                   amounts: [1n, 2n, 3n, 4n],
                 },
-                latestTransferCommitment: testHashes[1],
                 latestEbn: 0n,
-                customData: "0x",
+                zkptlcAddress: testAddress[1],
+                zkptlcInstance: testHashes[3],
               },
               userSignature: "0x",
               operatorSignature: "0x",
             },
             {
               leaf: {
-                withdrawLeaf: {
-                  recipient: signers.user.address,
-                  amount: withdrawLeafAmounts,
-                  startEbn: 11n,
-                  endEbn: 15n,
-                },
-                evidenceLeaf: {
-                  transferCommitment: testHashes[0],
-                  ebn: 4n,
-                },
+                recipient: signers.user.address,
+                amount: withdrawLeafAmounts,
+                startEbn: 11n,
+                endEbn: 15n,
               },
               index: 0n,
               siblings: [testHashes[1], testHashes[2]],
-            }
+            },
+            "0x"
           )
         )
           .to.be.revertedWithCustomError(
@@ -790,8 +678,8 @@ describe("Withdraw", () => {
       it("only after withdraw request", async () => {
         const [withdraw] = await loadFixture(setup)
         const signers = await getSigners()
-        const testHashes = generateDummyHashes(3)
-        const testAddress = generateDummyAddresses(1)
+        const testHashes = generateDummyHashes(4)
+        const testAddress = generateDummyAddresses(2)
         await expect(
           withdraw.connect(signers.operator).challengeWithdrawal(
             signers.user.address,
@@ -813,29 +701,24 @@ describe("Withdraw", () => {
                 spentDeposit: {
                   amounts: [1n, 2n, 3n, 4n],
                 },
-                latestTransferCommitment: testHashes[1],
                 latestEbn: 0n,
-                customData: "0x",
+                zkptlcAddress: testAddress[1],
+                zkptlcInstance: testHashes[3],
               },
               userSignature: "0x",
               operatorSignature: "0x",
             },
             {
               leaf: {
-                withdrawLeaf: {
-                  recipient: signers.user.address,
-                  amount: withdrawLeafAmounts,
-                  startEbn: 11n,
-                  endEbn: 15n,
-                },
-                evidenceLeaf: {
-                  transferCommitment: testHashes[0],
-                  ebn: 4n,
-                },
+                recipient: signers.user.address,
+                amount: withdrawLeafAmounts,
+                startEbn: 11n,
+                endEbn: 15n,
               },
               index: 0n,
               siblings: [testHashes[1], testHashes[2]],
-            }
+            },
+            "0x"
           )
         )
           .to.be.revertedWithCustomError(withdraw, "WithdrawalRequestNotFound")

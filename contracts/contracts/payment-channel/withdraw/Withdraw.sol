@@ -21,6 +21,7 @@ import {TransferLib} from "../../utils/TransferLib.sol";
 
 /**
  * @title Withdraw contract
+ * @author Intmax
  * @notice This contract supports user-initiated withdrawals without the need for a payment channel.
  * If the operator is cooperative, there is no need to use this contract.
  */
@@ -82,20 +83,18 @@ contract Withdraw is AccessControlUpgradeable, UUPSUpgradeable, IWithdraw {
      * @notice User issues a withdrawal request with a settlement proof of the total amount of
      * multiple airdrops. If the `WITHDRAW_TIMEOUT` has passed without being challenged by the operator,
      * the funds can be finalized through a `timeOutWithdrawal`.
-     * @param settlementProof The settlement proof that proves the total amount of airdrops.
+     * @param withdrawProof The withdraw merkle proof
      * @param redeposit The amount of assets to be redeposited
      */
     function requestWithdrawal(
-        IMerkleProof.SettlementMerkleProof memory settlementProof,
+        IMerkleProof.WithdrawWithMerkleProof memory withdrawProof,
         IAsset.Assets memory redeposit
     ) external onlyBeforeRequest {
         address user = _msgSender();
-        IRootManager(rootManagerAddress).verifySettlementMerkleProof(
-            settlementProof
+        IRootManager(rootManagerAddress).verifyWithdrawMerkleProof(
+            withdrawProof
         );
-        ILeaf.WithdrawLeaf memory withdrawLeaf = settlementProof
-            .leaf
-            .withdrawLeaf;
+        ILeaf.WithdrawLeaf memory withdrawLeaf = withdrawProof.leaf;
         IState.ChannelState memory channelState = IMain(mainAddress)
             .getChannelState(user);
         if (withdrawLeaf.recipient != user) {
@@ -128,21 +127,19 @@ contract Withdraw is AccessControlUpgradeable, UUPSUpgradeable, IWithdraw {
      * an airdrop. If the `WITHDRAW_TIMEOUT` has passed without being challenged by the operator,
      * the funds can be finalized through a `timeOutWithdrawal`.
      * @param transfer The transfer
-     * @param settlementProof The settlement proof of the channel state
+     * @param evidenceProof The evidence merkle proof
      * @param redeposit The amount of assets to be redeposited
      */
     function requestWithdrawalWithEvidence(
         ITransfer.Transfer memory transfer,
-        IMerkleProof.SettlementMerkleProof memory settlementProof,
+        IMerkleProof.EvidenceWithMerkleProof memory evidenceProof,
         IAsset.Assets memory redeposit
     ) external onlyBeforeRequest {
         address user = _msgSender();
-        IRootManager(rootManagerAddress).verifySettlementMerkleProof(
-            settlementProof
+        IRootManager(rootManagerAddress).verifyEvidenceMerkleProof(
+            evidenceProof
         );
-        ILeaf.EvidenceLeaf memory evidenceLeaf = settlementProof
-            .leaf
-            .evidenceLeaf;
+        ILeaf.EvidenceLeaf memory evidenceLeaf = evidenceProof.leaf;
         IState.ChannelState memory channelState = IMain(mainAddress)
             .getChannelState(user);
         if (evidenceLeaf.transferCommitment != transfer.transferCommitment()) {
@@ -171,16 +168,19 @@ contract Withdraw is AccessControlUpgradeable, UUPSUpgradeable, IWithdraw {
      * @notice Operator challenges the withdrawal request. The user will not incur any penalties.
      * @param user The user address
      * @param paymentWithSignature The payment with signature
-     * @param settlementProof The settlement proof of the channel state
+     * @param withdrawProof The withdraw merkle proof
+     * @param zktlcWitness The zkTLC witness
      */
     function challengeWithdrawal(
         address user,
         IPayment.PaymentWithSignature memory paymentWithSignature,
-        IMerkleProof.SettlementMerkleProof memory settlementProof
+        IMerkleProof.WithdrawWithMerkleProof memory withdrawProof,
+        bytes memory zktlcWitness
     ) external onlyRole(OPERATOR) onlyAfterRequest(user) {
         IMain(mainAddress).closeChannelAsChallenge(
             paymentWithSignature,
-            settlementProof
+            withdrawProof,
+            zktlcWitness
         );
         delete withdrawalRequests[user];
         emit WithdrawalChallenged(user);

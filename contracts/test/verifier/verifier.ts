@@ -7,6 +7,7 @@ import {
   generateDummyAddresses,
   testHash1,
   testHash2,
+  testHash3,
 } from "../test-utils"
 import { Config, Verifier } from "../../typechain-types"
 
@@ -91,7 +92,8 @@ describe("Verifier", () => {
       const result = await verifier.verifyProof(
         {
           blockHash: testHash1,
-          settlementRoot: testHash2,
+          evidenceRoot: testHash2,
+          withdrawRoot: testHash3,
         },
         "0x"
       )

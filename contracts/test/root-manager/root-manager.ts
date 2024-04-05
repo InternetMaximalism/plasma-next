@@ -12,12 +12,7 @@ import {
   testHash3,
   testAddress1,
 } from "../test-utils"
-import {
-  Config,
-  RootManager,
-  TestVerifier2,
-  TestBlockManager3,
-} from "../../typechain-types"
+import { Config, RootManager, TestVerifier2 } from "../../typechain-types"
 
 describe("RootManager", () => {
   const setup = async (): Promise<[RootManager, Config]> => {
@@ -29,9 +24,7 @@ describe("RootManager", () => {
     const rootManager = testRootManagerFactory.attach(addressBook.rootManager)
     return [rootManager as RootManager, config]
   }
-  const setupWithVerifier = async (): Promise<
-    [RootManager, TestVerifier2, TestBlockManager3]
-  > => {
+  const setupWithVerifier = async (): Promise<[RootManager, TestVerifier2]> => {
     const testRootManagerFactory = await ethers.getContractFactory(
       "RootManager"
     )
@@ -51,12 +44,8 @@ describe("RootManager", () => {
     //const addresses = generateDummyAddresses(1)
     await rootManager
       .connect(signers.dummyConfig)
-      .config(
-        signers.operator.address,
-        await verifier.getAddress(),
-        await blockManager.getAddress()
-      )
-    return [rootManager, verifier, blockManager]
+      .config(await verifier.getAddress(), await blockManager.getAddress())
+    return [rootManager, verifier]
   }
   describe("initialize", () => {
     describe("success", () => {
@@ -89,10 +78,7 @@ describe("RootManager", () => {
         const rootManager = await testRootManagerFactory.deploy()
         const signers = await getSigners()
         await rootManager.initialize(signers.dummyConfig.address)
-        const addresses = generateDummyAddresses(3)
-        const role = await rootManager.OPERATOR()
-        expect(await rootManager.hasRole(role, addresses[0])).to.equal(false)
-
+        const addresses = generateDummyAddresses(2)
         expect(await rootManager.verifierAddress()).to.not.equal(addresses[1])
         expect(await rootManager.blockManagerAddress()).to.not.equal(
           addresses[2]
@@ -100,10 +86,9 @@ describe("RootManager", () => {
 
         await rootManager
           .connect(signers.dummyConfig)
-          .config(addresses[0], addresses[1], addresses[2])
-        expect(await rootManager.hasRole(role, addresses[0])).to.equal(true)
-        expect(await rootManager.verifierAddress()).to.equal(addresses[1])
-        expect(await rootManager.blockManagerAddress()).to.equal(addresses[2])
+          .config(addresses[0], addresses[1])
+        expect(await rootManager.verifierAddress()).to.equal(addresses[0])
+        expect(await rootManager.blockManagerAddress()).to.equal(addresses[1])
       })
     })
     describe("fail", () => {
@@ -111,11 +96,11 @@ describe("RootManager", () => {
         const [rootManager] = await loadFixture(setup)
         const signers = await getSigners()
         const role = await rootManager.DEFAULT_ADMIN_ROLE()
-        const testAddresses = generateDummyAddresses(3)
+        const testAddresses = generateDummyAddresses(2)
         await expect(
           rootManager
             .connect(signers.illegalUser)
-            .config(testAddresses[0], testAddresses[1], testAddresses[2])
+            .config(testAddresses[0], testAddresses[1])
         )
           .to.be.revertedWithCustomError(
             rootManager,
@@ -129,134 +114,127 @@ describe("RootManager", () => {
   describe("postRoot", () => {
     describe("success", () => {
       it("generated RootPosted event", async () => {
-        const [rootManager, verifier, blockManager] = await setupWithVerifier()
-        const testHashes = generateDummyHashes(3)
+        const [rootManager, verifier] = await setupWithVerifier()
+        const testHashes = generateDummyHashes(4)
         await verifier.setResult(true)
-        await blockManager.setGetBlockHashResult(1, testHashes[0])
-
         await expect(
           rootManager.postRoot(
             1,
+            [ethers.ZeroHash],
+            [ethers.ZeroHash],
             {
               blockHash: testHashes[0],
-              settlementRoot: testHashes[1],
+              evidenceRoot: testHashes[1],
+              withdrawRoot: testHashes[2],
             },
-            testHashes[2]
+            testHashes[3]
           )
         )
           .to.emit(rootManager, "RootPosted")
-          .withArgs(testHashes[1])
+          .withArgs(testHashes[2], testHashes[1])
       })
       it("update exist flg", async () => {
-        const [rootManager, verifier, blockManager] = await setupWithVerifier()
-        const testHashes = generateDummyHashes(3)
+        const [rootManager, verifier] = await setupWithVerifier()
+        const testHashes = generateDummyHashes(4)
 
         await verifier.setResult(true)
-        await blockManager.setGetBlockHashResult(1, testHashes[0])
-        const existFlg = await rootManager.doesSettlementRootExist(
-          testHashes[1]
-        )
-        await expect(existFlg).to.equal(false)
-        await rootManager.postRoot(
-          1,
-          {
-            blockHash: testHashes[0],
-            settlementRoot: testHashes[1],
-          },
+        const withdrawExistFlg = await rootManager.doesWithdrawRootExist(
           testHashes[2]
         )
-
-        const existFlgAfter = await rootManager.doesSettlementRootExist(
+        await expect(withdrawExistFlg).to.equal(false)
+        const evidenceExistFlg = await rootManager.doesEvidenceRootExist(
           testHashes[1]
         )
-        await expect(existFlgAfter).to.equal(true)
+        await expect(evidenceExistFlg).to.equal(false)
+        await rootManager.postRoot(
+          1,
+          [ethers.ZeroHash],
+          [ethers.ZeroHash],
+          {
+            blockHash: testHashes[0],
+            evidenceRoot: testHashes[1],
+            withdrawRoot: testHashes[2],
+          },
+          testHashes[3]
+        )
+
+        const withdrawExistFlgAfter = await rootManager.doesWithdrawRootExist(
+          testHashes[2]
+        )
+        await expect(withdrawExistFlgAfter).to.equal(true)
+        const evidenceExistFlgAfter = await rootManager.doesEvidenceRootExist(
+          testHashes[1]
+        )
+        await expect(evidenceExistFlgAfter).to.equal(true)
       })
     })
     describe("fail", () => {
       it("not success verify proof", async () => {
-        const [rootManager, verifier, blockManager] = await setupWithVerifier()
+        const [rootManager, verifier] = await setupWithVerifier()
         await verifier.setResult(false)
-        const testHashes = generateDummyHashes(3)
-        await blockManager.setGetBlockHashResult(1, testHashes[0])
+        const testHashes = generateDummyHashes(4)
         await expect(
           rootManager.postRoot(
             1,
+            [ethers.ZeroHash],
+            [ethers.ZeroHash],
             {
               blockHash: testHashes[0],
-              settlementRoot: testHashes[1],
+              evidenceRoot: testHashes[1],
+              withdrawRoot: testHashes[2],
             },
-            testHashes[2]
+            testHashes[3]
           )
         ).to.be.revertedWithCustomError(rootManager, "ProofVerificationFailed")
       })
-      it("block hash mismatch", async () => {
-        const [rootManager, verifier] = await setupWithVerifier()
-        await verifier.setResult(true)
-        const testHashes = generateDummyHashes(3)
-
-        await expect(
-          rootManager.postRoot(
-            1,
-            {
-              blockHash: testHashes[0],
-              settlementRoot: testHashes[1],
-            },
-            testHashes[2]
-          )
-        )
-          .to.be.revertedWithCustomError(rootManager, "BlockHashMismatch")
-          .withArgs(testHashes[0], ethers.ZeroHash)
-      })
       it("proof verification failed", async () => {
-        const [rootManager, verifier, blockManager] = await setupWithVerifier()
-        const testHashes = generateDummyHashes(3)
+        const [rootManager, verifier] = await setupWithVerifier()
+        const testHashes = generateDummyHashes(4)
         await verifier.setRevert(true)
         await verifier.setResult(true)
-        await blockManager.setGetBlockHashResult(1, testHashes[0])
 
         await expect(
           rootManager.postRoot(
             1,
+            [ethers.ZeroHash],
+            [ethers.ZeroHash],
             {
               blockHash: testHashes[0],
-              settlementRoot: testHashes[1],
+              evidenceRoot: testHashes[1],
+              withdrawRoot: testHashes[2],
             },
-            testHashes[2]
+            testHashes[3]
           )
         ).to.be.revertedWithCustomError(rootManager, "ProofVerificationFailed")
       })
     })
   })
 
-  describe("verifySettlementMerkleProof", () => {
+  describe("verifyWithdrawMerkleProof", () => {
     describe("success", () => {
       it("set root flg", async () => {
-        const [rootManager, verifier, blockManager] = await setupWithVerifier()
+        const [rootManager, verifier] = await setupWithVerifier()
 
         await verifier.setResult(true)
-        await blockManager.setGetBlockHashResult(1, testHash1)
 
         await rootManager.postRoot(
           1,
+          [ethers.ZeroHash],
+          [ethers.ZeroHash],
           {
             blockHash: testHash1,
-            settlementRoot:
-              "0x34d4138e7e3683853535aafb2da51ad1574d77e77241ce6f9b9f2965444c4917",
+            evidenceRoot: testHash2,
+            withdrawRoot:
+              "0xcebebaaae83ff866e50d5979e1708329fa76da7587211ad68552994c4f059f2d",
           },
           testHash3
         )
-        await rootManager.verifySettlementMerkleProof({
+        await rootManager.verifyWithdrawMerkleProof({
           leaf: {
-            withdrawLeaf: {
-              recipient: testAddress1,
-              amount: { amounts: [1n, 2n, 3n, 4n] },
-              startEbn: 1n,
-              endEbn: 10n,
-            },
-            evidenceLeaf: {
-              transferCommitment: testHash3,
-              ebn: 4n,
-            },
+            recipient: testAddress1,
+            amount: { amounts: [1n, 2n, 3n, 4n] },
+            startEbn: 1n,
+            endEbn: 10n,
           },
           index: 0,
           siblings: [testHash1, testHash2],
@@ -267,29 +245,79 @@ describe("RootManager", () => {
     describe("fail", () => {
       it("not set root flg", async () => {
         const [rootManager] = await loadFixture(setup)
-        const testAddresses = generateDummyAddresses(1)
-        const [testHash, testHash2, testHash3] = generateDummyHashes(3)
         await expect(
-          rootManager.verifySettlementMerkleProof({
+          rootManager.verifyWithdrawMerkleProof({
             leaf: {
-              withdrawLeaf: {
-                recipient: testAddresses[0],
-                amount: { amounts: [1n, 2n, 3n, 4n] },
-                startEbn: 1n,
-                endEbn: 10n,
-              },
-              evidenceLeaf: {
-                transferCommitment: testHash3,
-                ebn: 4n,
-              },
+              recipient: testAddress1,
+              amount: { amounts: [1n, 2n, 3n, 4n] },
+              startEbn: 1n,
+              endEbn: 10n,
             },
             index: 0,
-            siblings: [testHash, testHash2],
+            siblings: [testHash1, testHash2],
           })
-        ).to.be.revertedWithCustomError(
-          rootManager,
-          "InvalidWithdrawMerkleProof"
         )
+          .to.be.revertedWithCustomError(
+            rootManager,
+            "InvalidWithdrawMerkleProof"
+          )
+          .withArgs(
+            "0xcebebaaae83ff866e50d5979e1708329fa76da7587211ad68552994c4f059f2d"
+          )
+      })
+    })
+  })
+
+  describe("verifyEvidenceMerkleProof", () => {
+    describe("success", () => {
+      it("set root flg", async () => {
+        const [rootManager, verifier] = await setupWithVerifier()
+
+        await verifier.setResult(true)
+
+        await rootManager.postRoot(
+          1,
+          [ethers.ZeroHash],
+          [ethers.ZeroHash],
+          {
+            blockHash: testHash1,
+            evidenceRoot:
+              "0xee40fed8b089ef2379f921ac857dbfd231ec811e97f8ac80149f0b18ea7aeb45",
+            withdrawRoot: testHash2,
+          },
+          testHash3
+        )
+        await rootManager.verifyEvidenceMerkleProof({
+          leaf: {
+            transferCommitment: testHash1,
+            ebn: 1n,
+          },
+          index: 0,
+          siblings: [testHash2, testHash3],
+        })
+        expect(true).to.equal(true)
+      })
+    })
+    describe("fail", () => {
+      it("not set root flg", async () => {
+        const [rootManager] = await loadFixture(setup)
+        await expect(
+          rootManager.verifyEvidenceMerkleProof({
+            leaf: {
+              transferCommitment: testHash1,
+              ebn: 1n,
+            },
+            index: 0,
+            siblings: [testHash1, testHash2],
+          })
+        )
+          .to.be.revertedWithCustomError(
+            rootManager,
+            "InvalidEvidenceMerkleProof"
+          )
+          .withArgs(
+            "0x03fdd5cbd981224c9a24f8c6505a58d23e3c40578b5d627f010a5a96c3542743"
+          )
       })
     })
   })

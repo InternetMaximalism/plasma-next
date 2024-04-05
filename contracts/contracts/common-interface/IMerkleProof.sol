@@ -4,8 +4,14 @@ pragma solidity 0.8.23;
 import {ILeaf} from "./ILeaf.sol";
 
 interface IMerkleProof {
-    struct SettlementMerkleProof {
-        ILeaf.SettlementLeaf leaf;
+    struct EvidenceWithMerkleProof {
+        ILeaf.EvidenceLeaf leaf;
+        uint256 index;
+        bytes32[] siblings;
+    }
+
+    struct WithdrawWithMerkleProof {
+        ILeaf.WithdrawLeaf leaf;
         uint256 index;
         bytes32[] siblings;
     }

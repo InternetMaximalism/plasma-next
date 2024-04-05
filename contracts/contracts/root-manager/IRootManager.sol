@@ -12,21 +12,29 @@ interface IRootManager {
     error ProofVerificationFailed();
 
     event BlockHashPosted(bytes32 indexed blockHash);
-    event RootPosted(bytes32 indexed settlementRoot);
+    event RootPosted(
+        bytes32 indexed withdrawRoot,
+        bytes32 indexed evidenceRoot
+    );
 
     function config(
-        address operator_,
         address verifierAddress_,
         address blockManagerAddress_
     ) external;
 
     function postRoot(
         uint32 blockNumber,
+        bytes32[] memory transferRoots,
+        bytes32[] memory totalDepositHashes,
         IPublicInputs.PublicInputs memory pis,
         bytes memory proof
     ) external;
 
-    function verifySettlementMerkleProof(
-        IMerkleProof.SettlementMerkleProof memory withdraw
+    function verifyWithdrawMerkleProof(
+        IMerkleProof.WithdrawWithMerkleProof memory withdraw
+    ) external view;
+
+    function verifyEvidenceMerkleProof(
+        IMerkleProof.EvidenceWithMerkleProof memory evidence
     ) external view;
 }

@@ -13,7 +13,6 @@ async function main() {
   const uniqueIdentifier = await getUniqueIdentifier(
     await testSignature.getAddress()
   )
-
   const payment = {
     uniqueIdentifier,
     user: await user.getAddress(),
@@ -31,12 +30,12 @@ async function main() {
     spentDeposit: {
       amounts: [100n, 200n, 300n, 500n],
     },
-    latestTransferCommitment: ethers.ZeroHash,
     latestEbn: 0n,
-    customData: "0x",
+    zkptlcAddress: ethers.ZeroAddress,
+    zkptlcInstance: ethers.ZeroHash,
   } as Payment
 
-  const ps = await signPayment(user, operator, payment)
+  const ps = await signPayment(user, operator, uniqueIdentifier, payment)
 
   await testSignature.verifyPaymentSignature(
     await operator.getAddress(),

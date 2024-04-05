@@ -32,6 +32,7 @@ contract TestMain {
 
     function closeChannelAsChallenge(
         IPayment.PaymentWithSignature memory paymentWithSignature,
-        IMerkleProof.SettlementMerkleProof memory settlementProof
+        IMerkleProof.WithdrawWithMerkleProof memory withdrwProof,
+        bytes memory zktlcWitness
     ) external pure {}
 }

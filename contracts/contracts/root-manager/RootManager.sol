@@ -16,6 +16,7 @@ import {IPublicInputs} from "../common-interface/IPublicInputs.sol";
 
 /**
  * @title RootManager
+ * @author Intmax
  * @notice This contract is responsible for managing the settlement root.
  * It verifies the ZKP proof and stores the settlement root.
  */
@@ -24,11 +25,13 @@ contract RootManager is
     UUPSUpgradeable,
     IRootManager
 {
-    using LeafLib for ILeaf.SettlementLeaf;
-    bytes32 public constant OPERATOR = keccak256("OPERATOR");
+    using LeafLib for ILeaf.WithdrawLeaf;
+    using LeafLib for ILeaf.EvidenceLeaf;
 
-    /// @notice Mapping that stores the existence of the settlement root.
-    mapping(bytes32 => bool) public doesSettlementRootExist;
+    /// @notice Mapping that stores the existence of the withdraw root.
+    mapping(bytes32 => bool) public doesWithdrawRootExist;
+    /// @notice Mapping that stores the existence of the evidence root.
+    mapping(bytes32 => bool) public doesEvidenceRootExist;
 
     /// @notice The address of the block manager contract.
     address public blockManagerAddress;
@@ -44,11 +47,9 @@ contract RootManager is
 
     /// @dev Config contract addresses called by the Config contract
     function config(
-        address operator_,
         address verifierAddress_,
         address blockManagerAddress_
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _grantRole(OPERATOR, operator_);
         verifierAddress = verifierAddress_;
         blockManagerAddress = blockManagerAddress_;
     }
@@ -60,15 +61,17 @@ contract RootManager is
      */
     function postRoot(
         uint32 blockNumber,
+        bytes32[] memory transferRoots,
+        bytes32[] memory totalDepositHashes,
         IPublicInputs.PublicInputs memory pis,
         bytes memory proof
     ) external {
-        bytes32 blockHash = IBlockManager(blockManagerAddress).getBlockHash(
-            blockNumber
+        IBlockManager(blockManagerAddress).verifyInclusion(
+            blockNumber,
+            pis.blockHash,
+            transferRoots,
+            totalDepositHashes
         );
-        if (blockHash != pis.blockHash) {
-            revert BlockHashMismatch(pis.blockHash, blockHash);
-        }
         try IVerifier(verifierAddress).verifyProof(pis, proof) returns (
             bool verified
         ) {
@@ -78,24 +81,42 @@ contract RootManager is
         } catch {
             revert ProofVerificationFailed();
         }
-        doesSettlementRootExist[pis.settlementRoot] = true;
-        emit RootPosted(pis.settlementRoot);
+        doesWithdrawRootExist[pis.withdrawRoot] = true;
+        doesEvidenceRootExist[pis.evidenceRoot] = true;
+        emit RootPosted(pis.withdrawRoot, pis.evidenceRoot);
     }
 
     /**
-     * @notice Verify the settlement merkle proof.
-     * @param settlement The settlement merkle proof.
+     * @notice Verify the withdraw with the merkle proof.
+     * @param withdraw withdraw
      */
-    function verifySettlementMerkleProof(
-        IMerkleProof.SettlementMerkleProof memory settlement
+    function verifyWithdrawMerkleProof(
+        IMerkleProof.WithdrawWithMerkleProof memory withdraw
     ) external view {
         bytes32 root = MerkleProofLib.getRootFromMerkleProof(
-            settlement.leaf.hashLeaf(),
-            settlement.index,
-            settlement.siblings
+            withdraw.leaf.hashLeaf(),
+            withdraw.index,
+            withdraw.siblings
         );
-        if (!doesSettlementRootExist[root]) {
+        if (!doesWithdrawRootExist[root]) {
             revert InvalidWithdrawMerkleProof(root);
+        }
+    }
+
+    /**
+     * @notice Verify the evidence with the merkle proof.
+     * @param evidence evidence
+     */
+    function verifyEvidenceMerkleProof(
+        IMerkleProof.EvidenceWithMerkleProof memory evidence
+    ) external view {
+        bytes32 root = MerkleProofLib.getRootFromMerkleProof(
+            evidence.leaf.hashLeaf(),
+            evidence.index,
+            evidence.siblings
+        );
+        if (!doesEvidenceRootExist[root]) {
+            revert InvalidEvidenceMerkleProof(root);
         }
     }
 

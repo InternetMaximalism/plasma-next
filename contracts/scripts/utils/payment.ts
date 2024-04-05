@@ -10,13 +10,11 @@ import {
 import { ethers } from "hardhat"
 
 export function initialPayment(
-  uniqueIdentifier: Bytes32,
   user: Address,
   curEbn: U64,
   round: U32
 ): Payment {
   return {
-    uniqueIdentifier,
     user,
     round,
     nonce: 0,
@@ -32,9 +30,9 @@ export function initialPayment(
     spentDeposit: {
       amounts: [0n, 0n, 0n, 0n],
     },
-    latestTransferCommitment: ethers.ZeroHash,
     latestEbn: curEbn,
-    customData: "0x",
+    zkptlcAddress: ethers.ZeroAddress,
+    zkptlcInstance: ethers.ZeroHash,
   }
 }
 
@@ -50,6 +48,7 @@ export async function getUniqueIdentifier(contractAddress: Address) {
 export async function signPayment(
   user: Signer,
   operator: Signer,
+  uniqueIdentifier: Bytes32,
   payment: Payment
 ): Promise<PaymentWithSignature> {
   const hash = ethers.solidityPackedKeccak256(
@@ -62,12 +61,12 @@ export async function signPayment(
       "uint256[4]",
       "uint256[4]",
       "uint256[4]",
-      "bytes32",
       "uint64",
-      "bytes",
+      "address",
+      "bytes32",
     ],
     [
-      payment.uniqueIdentifier,
+      uniqueIdentifier,
       payment.user,
       payment.round,
       payment.nonce,
@@ -75,9 +74,9 @@ export async function signPayment(
       payment.operatorBalance.amounts,
       payment.airdropped.amounts,
       payment.spentDeposit.amounts,
-      payment.latestTransferCommitment,
       payment.latestEbn,
-      payment.customData,
+      payment.zkptlcAddress,
+      payment.zkptlcInstance,
     ]
   )
 

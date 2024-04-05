@@ -2,7 +2,7 @@ import { ethers } from "hardhat"
 import { saveJsonToFile } from "./utils/saveJsonToFile"
 import { Config__factory } from "../typechain-types"
 
-import contracts from '../deploy-result/contracts.json';
+import contracts from "../deploy-result/contracts.json"
 
 async function main() {
   const configAddress = contracts.config

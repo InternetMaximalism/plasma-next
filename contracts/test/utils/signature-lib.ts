@@ -2,7 +2,7 @@ import { expect } from "chai"
 import { ethers } from "hardhat"
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers"
 import { TestSignature } from "../../typechain-types"
-import { getSigners, generateDummyHashes } from "../test-utils"
+import { getSigners, testAddress1, testHash1 } from "../test-utils"
 import {
   initialPayment,
   signPayment,
@@ -24,20 +24,23 @@ describe("SignatureLib", () => {
         const identifier = await getUniqueIdentifier(
           await signatureLib.getAddress()
         )
-        const payment = initialPayment(identifier, signers.user.address, 10n, 0)
+        const payment = initialPayment(signers.user.address, 10n, 0)
+        payment.zkptlcAddress = testAddress1
+        payment.zkptlcInstance = testHash1
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         await signatureLib.verifyPaymentSignature(
-          signers.operator.address,
-          signers.user.address,
           {
-            payment,
+            payment: payment,
             userSignature: signed.userSignature,
             operatorSignature: signed.operatorSignature,
-          }
+          },
+          signers.operator.address,
+          signers.user.address
         )
         expect(true).to.equal(true)
       })
@@ -49,55 +52,28 @@ describe("SignatureLib", () => {
         const identifier = await getUniqueIdentifier(
           await signatureLib.getAddress()
         )
-        const payment = initialPayment(identifier, signers.user.address, 10n, 0)
+        const payment = initialPayment(signers.user.address, 10n, 0)
+        payment.zkptlcAddress = testAddress1
+        payment.zkptlcInstance = testHash1
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         await expect(
           signatureLib.verifyPaymentSignature(
-            signers.operator.address,
-            signers.illegalUser.address,
             {
               payment,
               userSignature: signed.userSignature,
               operatorSignature: signed.operatorSignature,
-            }
+            },
+            signers.operator.address,
+            signers.illegalUser.address
           )
         )
           .to.be.revertedWithCustomError(signatureLib, "UserMismatch")
           .withArgs(signers.illegalUser.address, payment.user)
-      })
-      it("invalid unique identifier", async () => {
-        const signatureLib = await loadFixture(setup)
-        const signers = await getSigners()
-        const identifier = await getUniqueIdentifier(
-          await signatureLib.getAddress()
-        )
-        const testHash = generateDummyHashes(1)[0]
-        const payment = initialPayment(testHash, signers.user.address, 10n, 0)
-        const signed = await signPayment(
-          signers.user,
-          signers.operator,
-          payment
-        )
-        await expect(
-          signatureLib.verifyPaymentSignature(
-            signers.operator.address,
-            signers.user.address,
-            {
-              payment,
-              userSignature: signed.userSignature,
-              operatorSignature: signed.operatorSignature,
-            }
-          )
-        )
-          .to.be.revertedWithCustomError(
-            signatureLib,
-            "InvalidUniqueIdentifier"
-          )
-          .withArgs(identifier, payment.uniqueIdentifier)
       })
       it("invalid user signature", async () => {
         const signatureLib = await loadFixture(setup)
@@ -105,21 +81,24 @@ describe("SignatureLib", () => {
         const identifier = await getUniqueIdentifier(
           await signatureLib.getAddress()
         )
-        const payment = initialPayment(identifier, signers.user.address, 10n, 0)
+        const payment = initialPayment(signers.user.address, 10n, 0)
+        payment.zkptlcAddress = testAddress1
+        payment.zkptlcInstance = testHash1
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         await expect(
           signatureLib.verifyPaymentSignature(
-            signers.operator.address,
-            signers.user.address,
             {
               payment,
               userSignature: signed.operatorSignature,
               operatorSignature: signed.operatorSignature,
-            }
+            },
+            signers.operator.address,
+            signers.user.address
           )
         )
           .to.be.revertedWithCustomError(signatureLib, "InvalidUserSignature")
@@ -131,21 +110,24 @@ describe("SignatureLib", () => {
         const identifier = await getUniqueIdentifier(
           await signatureLib.getAddress()
         )
-        const payment = initialPayment(identifier, signers.user.address, 10n, 0)
+        const payment = initialPayment(signers.user.address, 10n, 0)
+        payment.zkptlcAddress = testAddress1
+        payment.zkptlcInstance = testHash1
         const signed = await signPayment(
           signers.user,
           signers.operator,
+          identifier,
           payment
         )
         await expect(
           signatureLib.verifyPaymentSignature(
-            signers.operator.address,
-            signers.user.address,
             {
               payment,
               userSignature: signed.userSignature,
               operatorSignature: signed.userSignature,
-            }
+            },
+            signers.operator.address,
+            signers.user.address
           )
         )
           .to.be.revertedWithCustomError(

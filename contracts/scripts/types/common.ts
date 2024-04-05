@@ -32,24 +32,25 @@ export interface WithdrawLeaf {
   endEbn: U64
 }
 
-export interface SettlementLeaf {
-  withdrawLeaf: WithdrawLeaf
-  evidenceLeaf: EvidenceLeaf
+export interface WithdrawMerkleProof {
+  leaf: WithdrawLeaf
+  index: U256
+  siblings: Bytes32[]
 }
 
-export interface SettlementMerkleProof {
-  leaf: SettlementLeaf
+export interface EvidenceMerkleProof {
+  leaf: EvidenceLeaf
   index: U256
   siblings: Bytes32[]
 }
 
 export interface WrapPublicInputs {
   blockHash: Bytes32
-  settlementRoot: Bytes32
+  evidenceRoot: Bytes32
+  withdrawRoot: Bytes32
 }
 
 export interface Payment {
-  uniqueIdentifier: Bytes32
   user: Address
   round: U32
   nonce: U32
@@ -57,9 +58,9 @@ export interface Payment {
   operatorBalance: Assets
   airdropped: Assets
   spentDeposit: Assets
-  latestTransferCommitment: Bytes32
   latestEbn: U64
-  customData: Bytes
+  zkptlcAddress: Address
+  zkptlcInstance: Bytes32
 }
 
 export interface PaymentWithSignature {
@@ -72,11 +73,29 @@ export interface Transfer {
   recipient: Address
   amount: U256
   assetId: U32
+  nonce: U32
+}
+
+export interface TransferInfo {
+  transfer: Transfer
+  transferIndex: U32
+  transferMerkleProof: Bytes32[]
+  block: Block
 }
 
 export interface Block {
   prevBlockHash: Bytes32
   transferRoot: Bytes32
-  totalDeposit: Assets
+  totalDepositHash: Bytes32
   blockNumber: U32
+}
+
+export interface BlockWithAmounts {
+  block: Block
+  totalDeposit: Assets
+}
+
+export interface BlockInfo {
+  block: BlockWithAmounts
+  transferInfo: TransferInfo[]
 }

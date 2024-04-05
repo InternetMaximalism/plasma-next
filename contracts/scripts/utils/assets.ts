@@ -1,3 +1,4 @@
+import { solidityPackedKeccak256 } from "ethers"
 import { Assets, Transfer, U256, U32 } from "../types/common"
 
 export function zeroAssets(): Assets {
@@ -47,6 +48,10 @@ export function isLe(left: Assets, right: Assets): boolean {
     left.amounts[2] <= right.amounts[2] &&
     left.amounts[3] <= right.amounts[3]
   )
+}
+
+export function hashAssets(assets: Assets): string {
+  return solidityPackedKeccak256(["uint256[4]"], [assets.amounts])
 }
 
 export function sumTransfers(transfers: Transfer[]): Assets {

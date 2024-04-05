@@ -12,6 +12,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title LiquidityManager
+ * @author Intmax
  * @notice This contract is responsible for managing liquidity.
  * It receives assets from a user and sends assets to a user.
  */

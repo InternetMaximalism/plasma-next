@@ -41,7 +41,7 @@ contract Config is AccessControlUpgradeable, UUPSUpgradeable, IConfig {
             halo2VerifyingKeyAddress_,
             halo2VerifierAddress_
         );
-        IRootManager(rootManager_).config(operator_, verifier_, blockManager_);
+        IRootManager(rootManager_).config(verifier_, blockManager_);
         IBlockManager(blockManager_).config(operator_, liquidityManager_);
         ILiquidityManager(liquidityManager_).config(
             tokenAddresses_,

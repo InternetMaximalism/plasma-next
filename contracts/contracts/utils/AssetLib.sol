@@ -72,4 +72,36 @@ library AssetLib {
         }
         return result;
     }
+
+    function addDelta(
+        IAsset.Assets memory left,
+        IAsset.AssetsDelta memory right
+    ) internal pure returns (IAsset.Assets memory) {
+        IAsset.Assets memory result;
+        // numAssets = 4
+        for (uint256 i = 0; i < 4; i++) {
+            result.amounts[i] = uint256(
+                int256(left.amounts[i]) + right.amounts[i]
+            );
+        }
+        return result;
+    }
+
+    function subDelta(
+        IAsset.Assets memory left,
+        IAsset.AssetsDelta memory right
+    ) internal pure returns (IAsset.Assets memory) {
+        IAsset.Assets memory result;
+        // numAssets = 4
+        for (uint256 i = 0; i < 4; i++) {
+            result.amounts[i] = uint256(
+                int256(left.amounts[i]) - right.amounts[i]
+            );
+        }
+        return result;
+    }
+
+    function hash(IAsset.Assets memory assets) internal pure returns (bytes32) {
+        return keccak256(abi.encode(assets.amounts));
+    }
 }

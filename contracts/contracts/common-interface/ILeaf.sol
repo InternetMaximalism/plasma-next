@@ -15,9 +15,4 @@ interface ILeaf is IAsset {
         uint64 startEbn;
         uint64 endEbn;
     }
-
-    struct SettlementLeaf {
-        WithdrawLeaf withdrawLeaf;
-        EvidenceLeaf evidenceLeaf;
-    }
 }
